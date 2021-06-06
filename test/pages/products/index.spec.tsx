@@ -1,5 +1,5 @@
 import { ROW_NUMBERS } from '@mocks/hooks';
-import Products from '@pages/products/index';
+import Products from '@pages/index';
 import { render, screen } from '@test/utils';
 
 jest.mock('@lib/hooks', () => require('@mocks/hooks'));
