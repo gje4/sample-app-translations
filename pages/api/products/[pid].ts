@@ -23,7 +23,7 @@ export default async function products(
 
         const { data: productData } = await bigcommerce.get(`/catalog/products/${pid}`);
         const { data: metafieldsData } = await bigcommerce.get(`/catalog/products/${pid}/metafields`);
-        
+
         productData.metafields = metafieldsData;
 
         res.status(200).json(productData);
@@ -59,7 +59,7 @@ export default async function products(
               // Update the metafield
               const { data } = await bigcommerce.put(
                 `/catalog/products/${pid}/metafields/${existingMetafieldId}`,
-                { 
+                {
                   value: metafieldValue,
                 }
               );
@@ -67,7 +67,7 @@ export default async function products(
             } else {
               const { data } = await bigcommerce.post(
                 `/catalog/products/${pid}/metafields`,
-                { 
+                {
                   key: productField,
                   value: metafieldValue,
                   namespace: selectedLocale,
@@ -86,8 +86,8 @@ export default async function products(
             body
           );
           const result = updatedProduct;
-        }        
-        
+        }
+
         res.status(200).json(result);
       } catch (error) {
         const { message, response } = error;

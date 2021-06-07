@@ -15,8 +15,8 @@ import {
   Dropdown,
   FlexItem,
 } from "@bigcommerce/big-design";
-import { useRouter } from 'next/router';
-import { ArrowBackIcon } from '@bigcommerce/big-design-icons';
+import { useRouter } from "next/router";
+import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { FormData, StringKeyValue } from "../types";
 
@@ -26,48 +26,47 @@ interface FormProps {
   onSubmit(form: FormData, selectedLocale: string): void;
 }
 
-const FormErrors = {
-  name: "Product name is required",
-  price: "Default price is required",
-};
+const FormErrors = {};
 
 function ProductForm({ formData, onCancel, onSubmit }: FormProps) {
   const router = useRouter();
-  const [currentLocale, setLocale] = useState<string>('en');
+  const [currentLocale, setLocale] = useState<string>("en");
 
   const getMetafieldValue = (fieldName: string, locale: string) => {
-    console.log('locale', locale)
-    const filteredFields = formData.metafields.filter((meta) => meta.namespace === locale && meta.key === fieldName);
-    console.log('f', filteredFields)
+    console.log("locale", locale);
+    const filteredFields = formData.metafields.filter(
+      (meta) => meta.namespace === locale && meta.key === fieldName
+    );
+    console.log("f", filteredFields);
     return filteredFields[0]?.value;
-  }
+  };
 
   const { description, isVisible, name, price, type, metafields } = formData;
-  
+
   const [form, setForm] = useState<FormData>({
-    description: getMetafieldValue('description', currentLocale) || description,
+    description: getMetafieldValue("description", currentLocale) || description,
     isVisible,
-    name: getMetafieldValue('name', currentLocale) || name,
-    price,
-    type,
+    name: getMetafieldValue("name", currentLocale) || name,
+    defaultName: name,
     metafields,
   });
 
   const [errors, setErrors] = useState<StringKeyValue>({});
 
-  const handleBackClick = () => router.push('/');
+  const handleBackClick = () => router.push("/");
 
   const handleLocaleChange = (selectedLocale) => {
-    console.log('selectedLocale', selectedLocale)
+    console.log("selectedLocale", { ...form });
     setForm({
       ...form,
       ...{
-        description: getMetafieldValue('description', selectedLocale) || description,
-        name: getMetafieldValue('name', selectedLocale) || name,
-      }
-    })
+        description:
+          getMetafieldValue("description", selectedLocale) || description,
+        name: getMetafieldValue("name", selectedLocale) || name,
+      },
+    });
     setLocale(selectedLocale);
-  }
+  };
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -105,60 +104,66 @@ function ProductForm({ formData, onCancel, onSubmit }: FormProps) {
   return (
     <>
       <Box marginBottom="xxLarge">
-          <Flex>
-            <FlexItem flexGrow={1}>
-              <Button iconLeft={<ArrowBackIcon color="secondary50" />} variant="subtle" onClick={handleBackClick}>
-                <Text bold color="secondary50">Products</Text>
-              </Button>
-            </FlexItem>
-            <FlexItem flexGrow={0}>
-              <Select
-                name="lang"
-                options={[
-                  { value: "en", content: "English (en)" },
-                  { value: "es", content: "Spanish (es)" },
-                  { value: "ca-fr", content: "CA-FR" },
-                ]}
-                placeholder="Select Language"
-                required
-                value={currentLocale}
-                onOptionChange={handleLocaleChange}
-              />
-            </FlexItem>
-          </Flex>
-          {name && <H1>{name}</H1>}
-          <HR color="secondary30" />
+        <Flex>
+          <FlexItem flexGrow={1}>
+            <Button
+              iconLeft={<ArrowBackIcon color="secondary50" />}
+              variant="subtle"
+              onClick={handleBackClick}
+            >
+              <Text bold color="secondary50">
+                Products
+              </Text>
+            </Button>
+          </FlexItem>
+          <FlexItem flexGrow={0}>
+            <Select
+              name="lang"
+              options={[
+                { value: "en", content: "English (en)" },
+                { value: "es", content: "Spanish (es)" },
+                { value: "ca-fr", content: "CA-FR" },
+              ]}
+              placeholder="Select Language"
+              required
+              value={currentLocale}
+              onOptionChange={handleLocaleChange}
+            />
+          </FlexItem>
+        </Flex>
+        {name && <H1>{name}</H1>}
+        <HR color="secondary30" />
       </Box>
       <StyledForm onSubmit={handleSubmit}>
-        <Panel header="Basic Information">
+        <Panel header="Default Language Name">
           <FormGroup>
             <Input
               error={errors?.name}
               label="Product name"
               name="name"
-              required
-              value={form.name}
+              value={form.defaultName}
               onChange={handleChange}
             />
           </FormGroup>
         </Panel>
 
-        <Panel header="Translations">        
+        <Panel header="Translations">
           <FormGroup>
             <Textarea
-              label={form.type + "  " + "name"}
+              label={currentLocale + "  " + "Name"}
               name="name"
-              placeholder="Name info"
+              placeholder="Name"
               required
               value={form.name}
               onChange={handleChange}
             />
             <Textarea
-              label={form.type + "  " + "Description"}
+              label={currentLocale + "  " + "Description"}
               name="description"
-              placeholder="Product info"
+              placeholder="Description"
               required
               value={form.description}
+              rows={20}
               onChange={handleChange}
             />
           </FormGroup>
