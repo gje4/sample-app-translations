@@ -4,33 +4,31 @@ import ProductForm from "../../components/form";
 import Loading from "../../components/loading";
 import { useProductInfo, useProductList } from "../../lib/hooks";
 import { FormData } from "../../types";
-import { Message, ProgressCircle } from "@bigcommerce/big-design";
 
 const ProductInfo = () => {
   const router = useRouter();
   const pid = Number(router.query?.pid);
   const { isError, isLoading, list = [], mutateList } = useProductList();
   const { isLoading: isInfoLoading, product } = useProductInfo(pid);
-
+  const updateState = false;
   const { description, is_visible: isVisible, name, metafields } =
     product ?? {};
   const formData = { description, isVisible, name, metafields };
 
   const handleCancel = () => router.push("/products");
 
-  const handleSubmit = async (data: FormData, selectedLocale: string) => {
-    // need to think about this
-    router.reload();
+  const handleSubmit = (data: FormData, selectedLocale: string) => {
     try {
       data.locale = selectedLocale;
       // Update product details
-      const updateProduct = await fetch(`/api/products/${pid}`, {
+      fetch(`/api/products/${pid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      // router.push("/products");
+      router.reload();
     } catch (error) {
+      //display error
       console.error("Error updating the product: ", error);
     }
   };
