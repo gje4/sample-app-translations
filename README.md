@@ -1,10 +1,8 @@
-# NextJS Sample App
+# BigCommerce Product Translation via Metafields (Admin App)
 
-This demo includes all of the files necessary to get started with a basic, hello world app. This app was built using NextJS, BigDesign, Typescript, and React.
+<img width="1904" alt="README-screenshot" src="https://user-images.githubusercontent.com/2677921/121815727-ce3f5980-cc45-11eb-84ac-3bf62195256d.png">
 
-## Overview
-A basic admin app that exposes metafields which can be used to store translated strings.
-
+This is a BigCommerce admin app that enables easy editing of locale specific metafields, which can be queried via REST or GraphQL APIs later (examples below) to enable custom multilingual storefront experiences. Built using NextJS, BigDesign, Typescript, and React. Additional locales and product fields can be added via constants in `lib/constants.ts` (docs below).
 
 ## General App Installation
 
@@ -70,3 +68,96 @@ Each array object contains:
   ...
 ]
 ```
+
+## Fetching a Product's Locale Metafields via APIs
+
+_Examples using `es` as the locale:_
+
+**REST**
+
+Endpoint:
+`GET /catalog/products/170/metafields?namespace=es`
+
+Result:
+```
+[
+    {
+        "id": 79,
+        "key": "name", // This is matched to the product field key
+        "value": "Pantalón deportivo unisex tipo jogger",
+        "namespace": "es",
+        "permission_set": "write_and_sf_access",
+        "resource_type": "product",
+        "resource_id": 170,
+        "description": "",
+        "date_created": "2020-10-20T02:10:40+00:00",
+        "date_modified": "2021-06-05T07:18:49+00:00"
+    },
+    ...
+]
+```
+
+Go here for more info on the Product Metafield endpoints: https://developer.bigcommerce.com/api-reference/store-management/catalog/product-metafields/getproductmetafieldsbyproductid
+
+**GraphQL**
+
+Endpoint: 
+`POST https://{bigcommerce_storefront_domain}.com/graphql`
+
+Query:
+```
+query metafields {
+  site {
+    products(entityIds: [170]) {
+      edges {
+        node {
+          metafields(namespace: "es") {
+            edges {
+              node {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Result:
+```
+{
+	"data": {
+		"site": {
+			"products": {
+				"edges": [{
+					"node": {
+						"metafields": {
+							"edges": [{
+									"node": {
+										"key": "name",
+										"value": "Pantalón deportivo unisex tipo jogger"
+									}
+								},
+                ...
+							]
+						}
+					}
+				}]
+			}
+		}
+	}
+}
+```
+
+Go here for more info on the GraphQL API: https://developer.bigcommerce.com/api-docs/storefront/graphql/graphql-storefront-api-overview
+
+## Surfacing translations within the Cart, Checkout, Orders and Notification Emails
+
+When creating the cart, you can pass in the locale specific string obtained by one of the above API methods into `line_items[x].name`, `line_items[x].option_selections.name`, and `line_items[x].option_selections.value` to override the base catalog's product name and option name / value strings. You can also set the value of `locale` on the cart in the format of `xx` or `xx-YY`.
+
+These values on the cart will be respected in the Checkout and Order flows, including being stored on the Order alongside the original catalog data and utilized when emails are sent to the shopper, if you are using BigCommerce's built-in email notifications.
+
+Note this capability is not strictly for this approach to translation using metafields. It can also be used when using Channel Listings, a Headless CMS, or API-centric translation services to manage your multilingual data.
