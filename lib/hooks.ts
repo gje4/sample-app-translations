@@ -1,3 +1,4 @@
+import { useState } from "react";
 import useSWR from "swr";
 import { ListItem } from "../types";
 
@@ -8,8 +9,12 @@ async function fetcher(url: string) {
 // Reusable SWR hooks
 // https://swr.vercel.app/
 export function useProductList() {
+  const [ page, setPage ] = useState(1);
+  const [ limit, setLimit ] = useState(10);
+  const [ keyword, setKeyword ] = useState('');
+
   const { data, error, mutate: mutateList } = useSWR(
-    "/api/products/list",
+    `/api/products/list?page=${page}&limit=${limit}&keyword=${keyword}`,
     fetcher
   );
 
@@ -18,6 +23,12 @@ export function useProductList() {
     isLoading: !data && !error,
     isError: error,
     mutateList,
+    page,
+    limit,
+    keyword,
+    setPage,
+    setLimit,
+    setKeyword,
   };
 }
 

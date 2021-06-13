@@ -5,7 +5,6 @@ import ErrorMessage from "@components/error";
 import ProductForm from "@components/form";
 import Loading from "@components/loading";
 import { useProductInfo, useProductList } from "@lib/hooks";
-import { AlertProps } from '@bigcommerce/big-design';
 import { FormData } from "@types";
 
 const ProductInfo = () => {
@@ -48,16 +47,17 @@ const ProductInfo = () => {
     }
   };
 
-  if (isProductInfoLoading) return <Loading />;
   if (hasProductInfoLoadingError) return <ErrorMessage />;
 
   return (
-    <ProductForm
-      formData={formData}
-      onCancel={handleCancel}
-      onSubmit={handleSubmit}
-      isSaving={isProductSaving}
-    />
+    <Loading isLoading={isProductInfoLoading}>
+      <ProductForm
+        formData={formData}
+        onCancel={handleCancel}
+        onSubmit={handleSubmit}
+        isSaving={isProductSaving}
+      />
+    </Loading>
   );
 };
 

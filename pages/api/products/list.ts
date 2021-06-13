@@ -5,13 +5,11 @@ export default async function list(req: NextApiRequest, res: NextApiResponse) {
     try {
         const { accessToken, storeHash } = await getSession(req);
         const bigcommerce = bigcommerceClient(accessToken, storeHash);
-        // Optional: pass in API params here
-        const params = [
-            'limit=11',
-        ].join('&');
+        
+        const { page, limit, keyword } = req.query;
 
-        const { data } = await bigcommerce.get(`/catalog/products?${params}`);
-        res.status(200).json(data);
+        const { data, meta } = await bigcommerce.get(`/catalog/products?page=${page}&limit=${limit}&keyword=${keyword}`);
+        res.status(200).json({ data, meta });
     } catch (error) {
         const { message, response } = error;
         res.status(response?.status || 500).end(message || 'Authentication failed, please re-install');
