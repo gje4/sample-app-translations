@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { bigcommerceClient, getSession } from "../../../lib/auth";
+import { bigcommerceClient, getSession } from "@lib/auth";
+import { defaultLocale, translatableProductFields } from "@lib/constants";
 
 const getMetafieldId = (metafields: any, fieldName: string, locale: string) => {
   const filteredFields = metafields.filter((meta) => meta.namespace === locale && meta.key === fieldName);
@@ -40,20 +41,15 @@ export default async function products(
         const { accessToken, storeHash } = await getSession(req);
         const bigcommerce = bigcommerceClient(accessToken, storeHash);
 
-        if (body['locale'] && body.locale !== 'en') {
+        if (body['locale'] && body.locale !== defaultLocale) {
           // This is for a localization, so create / update metafields
           const selectedLocale = body.locale;
           const { data: existingMetafields } = await bigcommerce.get(`/catalog/products/${pid}/metafields`);
 
-          const translatableFields = [
-            'name',
-            'description'
-          ];
-
-          for (const productField of translatableFields) {
+          for (const productField of translatableProductFields) {
             let metafieldResults = [];
-            const existingMetafieldId = getMetafieldId(existingMetafields, productField, selectedLocale);
-            const metafieldValue = body[productField];
+            const existingMetafieldId = getMetafieldId(existingMetafields, productField.key, selectedLocale);
+            const metafieldValue = body[productField.key];
 
             if (existingMetafieldId) {
               // Update the metafield
@@ -65,16 +61,19 @@ export default async function products(
               );
               metafieldResults.push(data);
             } else {
-              const { data } = await bigcommerce.post(
-                `/catalog/products/${pid}/metafields`,
-                {
-                  key: productField,
-                  value: metafieldValue,
-                  namespace: selectedLocale,
-                  permission_set: 'write_and_sf_access',
-                }
-              );
-              metafieldResults.push(data);
+              // Create the metafield, but only if there is a value (metafields cannot be created with empty values)
+              if (metafieldValue !== '') {
+                const { data } = await bigcommerce.post(
+                  `/catalog/products/${pid}/metafields`,
+                  {
+                    key: productField.key,
+                    value: metafieldValue,
+                    namespace: selectedLocale,
+                    permission_set: 'write_and_sf_access',
+                  }
+                );
+                metafieldResults.push(data);
+              }
             }
 
             const result = metafieldResults;

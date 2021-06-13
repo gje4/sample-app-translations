@@ -5,7 +5,7 @@ import { decode, getCookie, removeCookie, setCookie } from "./cookie";
 import db from "./db";
 
 const { AUTH_CALLBACK, CLIENT_ID, CLIENT_SECRET } = process.env;
-// console.log("vercel", process.env);
+
 // Create BigCommerce instance
 // https://github.com/getconversio/node-bigcommerce
 const bigcommerce = new BigCommerce({

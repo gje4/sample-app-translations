@@ -1,46 +1,62 @@
+import { useState } from "react";
 import { useRouter } from "next/router";
-import ErrorMessage from "../../components/error";
-import ProductForm from "../../components/form";
-import Loading from "../../components/loading";
-import { useProductInfo, useProductList } from "../../lib/hooks";
-import { FormData } from "../../types";
+import { alertsManager } from "@pages/_app";
+import ErrorMessage from "@components/error";
+import ProductForm from "@components/form";
+import Loading from "@components/loading";
+import { useProductInfo, useProductList } from "@lib/hooks";
+import { AlertProps } from '@bigcommerce/big-design';
+import { FormData } from "@types";
 
 const ProductInfo = () => {
   const router = useRouter();
   const pid = Number(router.query?.pid);
-  const { isError, isLoading, list = [], mutateList } = useProductList();
-  const { isLoading: isInfoLoading, product } = useProductInfo(pid);
-  const updateState = false;
-  const { description, is_visible: isVisible, name, metafields } =
-    product ?? {};
+  const { isLoading: isProductInfoLoading, isError: hasProductInfoLoadingError, product } = useProductInfo(pid);
+  const { description, is_visible: isVisible, name, metafields } = product ?? {};
   const formData = { description, isVisible, name, metafields };
+  const [ isProductSaving, setProductSaving ] = useState(false);
 
-  const handleCancel = () => router.push("/products");
+  const handleCancel = () => router.push("/");
 
   const handleSubmit = (data: FormData, selectedLocale: string) => {
     try {
       data.locale = selectedLocale;
       // Update product details
+      setProductSaving(true);
+
       fetch(`/api/products/${pid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+      }).finally(() => {
+        setProductSaving(false);
+
+        alertsManager.add({
+          autoDismiss: true,
+          messages: [
+            {
+              text: 'Product translations have been saved.',
+            },
+          ],
+          type: 'success',
+        })
       });
-      router.reload();
     } catch (error) {
       //display error
       console.error("Error updating the product: ", error);
+      setProductSaving(false);
     }
   };
 
-  if (isLoading || isInfoLoading) return <Loading />;
-  if (isError) return <ErrorMessage />;
+  if (isProductInfoLoading) return <Loading />;
+  if (hasProductInfoLoadingError) return <ErrorMessage />;
 
   return (
     <ProductForm
       formData={formData}
       onCancel={handleCancel}
       onSubmit={handleSubmit}
+      isSaving={isProductSaving}
     />
   );
 };

@@ -35,3 +35,38 @@ To get the app running locally, follow these instructions:
 10. Start your dev environment in a **separate** terminal from `ngrok`. If `ngrok` restarts, update callbacks in steps 4 and 7 with the new ngrok_id.
     - `npm run dev`
 11. [Install the app and launch.](https://developer.bigcommerce.com/api-docs/apps/quick-start#install-the-app)
+
+## Setting available locales
+
+Update the `availableLocales` array in `lib/constants.ts`: 
+
+```
+[
+  {
+    code: 'en', // The locale code
+    label: 'English', // The label that will be used in the UI
+  },
+  ...
+]
+```
+
+## Setting default catalog locale
+
+Update the `defaultLocale` variable in `lib/constants.ts` from `en` to the default locale of your catalog.
+
+## Changing which product fields are available to translate
+
+Update the `translatableProductFields` array in `lib/constants.ts`;
+
+Each array object contains:
+```
+[
+  {
+    key: 'description', // The product field name
+    label: 'Description', // The label that will be shown in the UI
+    type: 'textarea', // The type of input that will be used in the UI (input, textarea)
+    required: true, // If the field is required or not (true, false)
+  },
+  ...
+]
+```

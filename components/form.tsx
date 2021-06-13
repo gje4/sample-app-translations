@@ -1,98 +1,93 @@
-import {
-  Button,
-  Box,
-  Checkbox,
-  Flex,
-  FormGroup,
-  H1,
-  HR,
-  Input,
-  Panel,
-  Select,
-  Form as StyledForm,
-  Textarea,
-  Text,
-  Dropdown,
-  FlexItem,
-} from "@bigcommerce/big-design";
+import { Button, Box, Flex, H1, HR, Input, Panel, Select, Form as StyledForm, Textarea, Text, FlexItem } from "@bigcommerce/big-design";
 import { useRouter } from "next/router";
-import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
+import { ArrowBackIcon, ArrowUpwardIcon } from "@bigcommerce/big-design-icons";
 import { ChangeEvent, FormEvent, useState } from "react";
-import { FormData, StringKeyValue } from "../types";
+import { FormData, StringKeyValue } from "@types";
+import { availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
+import styled from 'styled-components';
+
+const StyledFlex = styled(Box)`
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  width: 100%;
+`;
 
 interface FormProps {
   formData: FormData;
   onCancel(): void;
   onSubmit(form: FormData, selectedLocale: string): void;
-}
+  isSaving: boolean;
+} 
 
 const FormErrors = {};
 
-function ProductForm({ formData, onCancel, onSubmit }: FormProps) {
+function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: FormProps) {
   const router = useRouter();
-  const [currentLocale, setLocale] = useState<string>("en");
+  const [currentLocale, setLocale] = useState<string>(defaultLocale);
 
   const getMetafieldValue = (fieldName: string, locale: string) => {
-    console.log("locale", locale);
-    const filteredFields = formData.metafields.filter(
+    const filteredFields = productData.metafields.filter(
       (meta) => meta.namespace === locale && meta.key === fieldName
     );
-    console.log("f", filteredFields);
     return filteredFields[0]?.value;
   };
 
-  const { description, isVisible, name, price, type, metafields } = formData;
+  const getFormObjectForLocale = (locale: string) => {
+    const formObject = Object.fromEntries(translatableProductFields.map((field) => {
+      return [ 
+        field.key, 
+        getMetafieldValue(field.key, locale) || productData[field.key] || ''
+      ];
+    }));
 
-  const [form, setForm] = useState<FormData>({
-    description: getMetafieldValue("description", currentLocale) || description,
-    isVisible,
-    name: getMetafieldValue("name", currentLocale) || name,
-    defaultName: name,
-    metafields,
-  });
+    formObject.metafields = productData['metafields'];
+
+    return formObject;
+  }
+
+  const defaultLocaleProductData = productData;
+  const initialFormObject = getFormObjectForLocale(currentLocale);
+
+  const [form, setForm] = useState<FormData>(initialFormObject);
 
   const [errors, setErrors] = useState<StringKeyValue>({});
 
   const handleBackClick = () => router.push("/");
 
   const handleLocaleChange = (selectedLocale) => {
-    console.log("selectedLocale", { ...form });
+    let newFormObject = getFormObjectForLocale(selectedLocale);
+
     setForm({
       ...form,
-      ...{
-        description:
-          getMetafieldValue("description", selectedLocale) || description,
-        name: getMetafieldValue("name", selectedLocale) || name,
-      },
+      ...newFormObject,
     });
+
     setLocale(selectedLocale);
   };
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name: formName, value } = event?.target;
-    setForm((prevForm) => ({ ...prevForm, [formName]: value }));
+    const { name: fieldName, value } = event?.target;
+
+    form[fieldName] = value;
+
+    setForm(form);
 
     // Add error if it exists in FormErrors and the input is empty, otherwise remove from errors
-    !value && FormErrors[formName]
+    !value && FormErrors[fieldName]
       ? setErrors((prevErrors) => ({
           ...prevErrors,
-          [formName]: FormErrors[formName],
+          [fieldName]: FormErrors[fieldName],
         }))
-      : setErrors(({ [formName]: removed, ...prevErrors }) => ({
+      : setErrors(({ [fieldName]: removed, ...prevErrors }) => ({
           ...prevErrors,
         }));
   };
 
-  const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { checked, name: formName } = event?.target;
-    setForm((prevForm) => ({ ...prevForm, [formName]: checked }));
-  };
-
   const handleSubmit = (event: FormEvent<EventTarget>) => {
     event.preventDefault();
-    console.log("submit", form);
 
     // If there are errors, do not submit the form
     const hasErrors = Object.keys(errors).length > 0;
@@ -105,7 +100,7 @@ function ProductForm({ formData, onCancel, onSubmit }: FormProps) {
     <>
       <Box marginBottom="xxLarge">
         <Flex>
-          <FlexItem flexGrow={1}>
+          <FlexItem flexGrow={1} alignSelf="flex-start">
             <Button
               iconLeft={<ArrowBackIcon color="secondary50" />}
               variant="subtle"
@@ -116,69 +111,133 @@ function ProductForm({ formData, onCancel, onSubmit }: FormProps) {
               </Text>
             </Button>
           </FlexItem>
+        </Flex>
+        <Flex>
+          <FlexItem flexGrow={1} alignSelf="flex-start">
+            {defaultLocaleProductData['name'] && <H1>{defaultLocaleProductData['name']}</H1>}
+          </FlexItem>
           <FlexItem flexGrow={0}>
-            <Select
-              name="lang"
-              options={[
-                { value: "en", content: "English (en)" },
-                { value: "es", content: "Spanish (es)" },
-                { value: "ca-fr", content: "CA-FR" },
-              ]}
-              placeholder="Select Language"
-              required
-              value={currentLocale}
-              onOptionChange={handleLocaleChange}
-            />
+            <Box paddingBottom="small">
+              <Select
+                name="lang"
+                options={availableLocales.map((locale) => ({
+                  value: locale.code,
+                  content: `${locale.label} ${locale.code === defaultLocale ? '(Default)': ''}`,
+                }))}
+                placeholder="Select Language"
+                required
+                value={currentLocale}
+                onOptionChange={handleLocaleChange}
+              />
+            </Box>
           </FlexItem>
         </Flex>
-        {name && <H1>{name}</H1>}
         <HR color="secondary30" />
       </Box>
-      <StyledForm onSubmit={handleSubmit}>
-        <Panel header="Default Language Name">
-          <FormGroup>
-            <Input
-              error={errors?.name}
-              label="Product name"
-              name="name"
-              value={form.defaultName}
-              onChange={handleChange}
-            />
-          </FormGroup>
+      <StyledForm fullWidth={true} onSubmit={handleSubmit}>
+        <Panel>
+          {translatableProductFields.map((field) =>
+            <Box key={`${field.key}_${currentLocale}`}>
+              {field.type === 'textarea' && 
+                <Flex>
+                  <FlexItem flexGrow={1} paddingBottom="small">
+                    <Box style={{maxWidth: '40rem'}}>
+                      <Textarea
+                        label={`${field.label} (${defaultLocale})`}
+                        name={`defaultLocale_${field.key}`}
+                        defaultValue={defaultLocaleProductData[field.key]}
+                        readOnly={true}
+                        rows={5}
+                        required={field.required}
+                      />
+                    </Box>
+                  </FlexItem>
+                  
+                  {currentLocale !== defaultLocale && 
+                    <FlexItem flexGrow={1} paddingBottom="small">
+                      <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
+                        <Textarea
+                          label={`${field.label} (${currentLocale})`}
+                          name={field.key}
+                          value={form[field.key]}
+                          onChange={handleChange}
+                          required={field.required}
+                          rows={5}
+                        />
+                      </Box>
+                    </FlexItem>
+                  }
+                </Flex>
+              }
+              {field.type === 'input' && 
+                <Flex>
+                  <FlexItem flexGrow={1} paddingBottom="small">
+                    <Box style={{maxWidth: '40rem'}}>
+                      <Input
+                        label={`${field.label} (${defaultLocale})`}
+                        name={`defaultLocale_${field.key}`}
+                        defaultValue={defaultLocaleProductData[field.key]}
+                        readOnly={true}
+                        required={field.required}
+                      />
+                    </Box>
+                  </FlexItem>
+
+                  {currentLocale !== defaultLocale &&
+                    <FlexItem flexGrow={1} paddingBottom="small">
+                      <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
+                        <Input
+                          label={`${field.label} (${currentLocale})`}
+                          name={field.key}
+                          value={form[field.key]}
+                          onChange={handleChange}
+                          required={field.required}
+                        />
+                      </Box>
+                    </FlexItem>
+                  }
+                </Flex>
+              }
+            </Box>
+          )}
+          
+          {currentLocale === defaultLocale &&
+            <Box style={{ 
+              margin: 'auto',
+              position: 'fixed',
+              textAlign: 'right',
+              right: '5rem',
+              width: '15rem',
+              top: '15rem',
+              backgroundColor: 'white',
+              padding: '1rem',
+              opacity: '0.9',
+              }}>
+              <ArrowUpwardIcon color="primary60" size="xLarge" />
+              <Text color="primary60">Select a locale above to start editing translations for this product.</Text>
+            </Box> 
+          }
         </Panel>
 
-        <Panel header="Translations">
-          <FormGroup>
-            <Textarea
-              label={currentLocale + "  " + "Name"}
-              name="name"
-              placeholder="Name"
-              required
-              value={form.name}
-              onChange={handleChange}
-            />
-            <Textarea
-              label={currentLocale + "  " + "Description"}
-              name="description"
-              placeholder="Description"
-              required
-              value={form.description}
-              rows={20}
-              onChange={handleChange}
-            />
-          </FormGroup>
-        </Panel>
-        <Flex justifyContent="flex-end">
-          <Button
-            marginRight="medium"
-            type="button"
-            variant="subtle"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button type="submit">Save</Button>
-        </Flex>
+        <StyledFlex backgroundColor="white" border="box" padding="medium">
+          <Flex justifyContent="flex-end">
+            <Button
+              marginRight="medium"
+              type="button"
+              variant="subtle"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={(currentLocale === defaultLocale)}
+              isLoading={isSaving}
+            >
+              Save
+            </Button>
+          </Flex>
+        </StyledFlex>
       </StyledForm>
     </>
   );

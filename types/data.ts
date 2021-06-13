@@ -1,11 +1,5 @@
 export interface FormData {
-    description: string;
-    isVisible: boolean;
-    name: string;
-    price: number;
-    type: string;
-    metafields: any;
-    locale?: string;
+    [k: string]: any;
 }
 
 export interface TableItem {
