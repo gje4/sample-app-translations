@@ -1,4 +1,5 @@
-# BigCommerce Product Translation via Metafields (Admin App)
+# BigCommerce Product Translation via Metafields
+### Sample Admin App
 
 <img width="1904" alt="README-screenshot" src="https://user-images.githubusercontent.com/2677921/121815727-ce3f5980-cc45-11eb-84ac-3bf62195256d.png">
 
