@@ -171,4 +171,4 @@ When creating the cart, you can pass in the locale specific string obtained by o
 
 These values on the cart will be respected in the Checkout and Order flows, including being stored on the Order alongside the original catalog data and utilized when emails are sent to the shopper, if you are using BigCommerce's built-in email notifications.
 
-Note this capability is not strictly for this approach to translation using metafields. It can also be used when using Channel Listings, a Headless CMS, or API-centric translation services to manage your multilingual data.
+Note this capability is not strictly for this approach to translation using metafields. It can also be used when using Channel Listings, a Headless CMS, or API-centric translation services to manage your multilingual data. 
