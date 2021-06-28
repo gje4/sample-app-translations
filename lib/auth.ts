@@ -5,6 +5,8 @@ import { decode, getCookie, removeCookie, setCookie } from "./cookie";
 import db from "./db";
 
 const { AUTH_CALLBACK, CLIENT_ID, CLIENT_SECRET } = process.env;
+console.log("env", process.env)
+
 
 // Create BigCommerce instance
 // https://github.com/getconversio/node-bigcommerce
@@ -17,7 +19,6 @@ const bigcommerce = new BigCommerce({
   headers: { "Accept-Encoding": "*" },
   apiVersion: "v3",
 });
-
 const bigcommerceSigned = new BigCommerce({
   secret: CLIENT_SECRET,
   responseType: "json",
