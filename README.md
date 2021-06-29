@@ -21,7 +21,7 @@ To get the app running locally, follow these instructions:
      - Get `ngrok_id` from the terminal that's running `ngrok http 3000`.
      - e.g. auth callback: `https://12345.ngrok.io/api/auth`
 5. Copy the `.env-sample` file to a local `.env` replacing all placeholder values with the keys and configs for your project.
-     - If deploying on Heroku, skip `.env` setup.  Instead, enter `env` variables in the Heroku App Dashboard under `Settings -> Config Vars`.
+     - If deploying on Heroku or Vercel, skip `.env` setup.  Instead, enter `env` variables in the Heroku App Dashboard under `Settings -> Config Vars`, for Vercel under `Settings -> Enviroment Variables`.
 6. [Replace client_id and client_secret in .env](https://devtools.bigcommerce.com/my/apps) (from `View Client ID` in the dev portal).
 7. Update AUTH_CALLBACK in `.env` with the full auth callback url (e.g. `https://{ngrok_id}.ngrok.io/api/{auth||load||uninstall}` if developing locally) from step 5.
 8. Enter a `COOKIE_NAME`, as well as a `JWT_KEY` secret in `.env`.
