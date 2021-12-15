@@ -2,9 +2,17 @@ import * as mysql from 'mysql';
 import { promisify } from 'util';
 import { SessionProps, StoreData } from '../../types';
 
+const MYSQL_CONFIG = {
+    host: process.env.MYSQL_HOST,
+    database: process.env.MYSQL_DATABASE,
+    user: process.env.MYSQL_USERNAME,
+    password: process.env.MYSQL_PASSWORD,
+    ...(process.env.MYSQL_PORT && { port: process.env.MYSQL_PORT }),
+};
+
 // For use with Heroku ClearDB
 // Other mysql: https://www.npmjs.com/package/mysql#establishing-connections
-const connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
+const connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL ? process.env.CLEARDB_DATABASE_URL : MYSQL_CONFIG);
 const query = promisify(connection.query.bind(connection));
 
 // Use setUser for storing global user data (persists between installs)
@@ -30,49 +38,52 @@ export async function setStore(session: SessionProps) {
 
 // Use setStoreUser for storing store specific variables
 export async function setStoreUser(session: SessionProps) {
-    const { access_token: accessToken, context, user: { id } } = session;
-    if (!id) return null;
+    const { access_token: accessToken, context, owner, sub, user: { id: userId } } = session;
+    if (!userId) return null;
 
-    const storeHash = context?.split('/')[1] || '';
-    const [oldAdmin] = await query('SELECT * FROM storeUsers WHERE isAdmin IS TRUE limit 1') ?? [];
+    const contextString = context ?? sub;
+    const storeHash = contextString?.split('/')[1] || '';
+    const sql = 'SELECT * FROM storeUsers WHERE userId = ? AND storeHash = ?';
+    const values = [String(userId), storeHash];
+    const storeUser = await query(sql, values);
 
     // Set admin (store owner) if installing/ updating the app
     // https://developer.bigcommerce.com/api-docs/apps/guide/users
     if (accessToken) {
-        // Nothing to update if admin the same
-        if (oldAdmin?.userId === String(id)) return null;
-
-        // Update admin (if different and previously installed)
-        if (oldAdmin) {
-            await query('UPDATE storeUsers SET isAdmin=0 WHERE isAdmin IS TRUE');
+        // Create a new admin user if none exists
+        if (!storeUser.length) {
+            await query('INSERT INTO storeUsers SET ?', { isAdmin: true, storeHash, userId });
+        } else if (!storeUser[0]?.isAdmin) {
+            await query('UPDATE storeUsers SET isAdmin=1 WHERE userId = ? AND storeHash = ?', values);
         }
-
-        // Create a new record
-        await query('INSERT INTO storeUsers SET ?', { isAdmin: true, storeHash, userId: id });
     } else {
-        const storeUser = await query('SELECT * FROM storeUsers WHERE userId = ?', String(id));
-
         // Create a new user if it doesn't exist (non-store owners added here for multi-user apps)
         if (!storeUser.length) {
-            await query('INSERT INTO storeUsers SET ?', { isAdmin: false, storeHash, userId: id });
+            await query('INSERT INTO storeUsers SET ?', { isAdmin: owner.id === userId, storeHash, userId });
         }
     }
 }
 
-export async function deleteUser({ user }: SessionProps) {
-    await query('DELETE FROM storeUsers WHERE userId = ?', String(user?.id));
+export async function deleteUser({ context, user, sub }: SessionProps) {
+    const contextString = context ?? sub;
+    const storeHash = contextString?.split('/')[1] || '';
+    const values = [String(user?.id), storeHash];
+    await query('DELETE FROM storeUsers WHERE userId = ? AND storeHash = ?', values);
 }
 
-export async function getStore() {
-    const results = await query('SELECT * FROM stores limit 1');
+export async function hasStoreUser(storeHash: string, userId: string) {
+    if (!storeHash || !userId) return false;
 
-    return results.length ? results[0] : null;
+    const values = [userId, storeHash];
+    const results = await query('SELECT * FROM storeUsers WHERE userId = ? AND storeHash = ? LIMIT 1', values);
+
+    return results.length > 0;
 }
 
 export async function getStoreToken(storeHash: string) {
     if (!storeHash) return null;
 
-    const results = await query('SELECT accessToken FROM stores limit 1');
+    const results = await query('SELECT accessToken FROM stores WHERE storeHash = ?', storeHash);
 
     return results.length ? results[0].accessToken : null;
 }

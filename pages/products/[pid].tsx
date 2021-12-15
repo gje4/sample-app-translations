@@ -1,64 +1,53 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
-import { alertsManager } from "@pages/_app";
-import ErrorMessage from "@components/error";
-import ProductForm from "@components/form";
-import Loading from "@components/loading";
-import { useProductInfo, useProductList } from "@lib/hooks";
-import { FormData } from "@types";
+import { useRouter } from 'next/router';
+import ErrorMessage from '../../components/error';
+import Form from '../../components/form';
+import Loading from '../../components/loading';
+import { useSession } from '../../context/session';
+import { useProductInfo, useProductList } from '../../lib/hooks';
+import { FormData } from '../../types';
 
 const ProductInfo = () => {
-  const router = useRouter();
-  const pid = Number(router.query?.pid);
-  const { isLoading: isProductInfoLoading, isError: hasProductInfoLoadingError, product } = useProductInfo(pid);
-  const { description, is_visible: isVisible, name, metafields } = product ?? {};
-  const formData = { description, isVisible, name, metafields };
-  const [ isProductSaving, setProductSaving ] = useState(false);
+    const router = useRouter();
+    const encodedContext = useSession()?.context;
+    const pid = Number(router.query?.pid);
+    const { error, isLoading, list = [], mutateList } = useProductList();
+    const { isLoading: isInfoLoading, product } = useProductInfo(pid, list);
+    const { description, is_visible: isVisible, name, price, type } = product ?? {};
+    const formData = { description, isVisible, name, price, type };
 
-  const handleCancel = () => router.push("/");
+    const handleCancel = () => router.push('/products');
 
-  const handleSubmit = (data: FormData, selectedLocale: string) => {
-    try {
-      data.locale = selectedLocale;
-      // Update product details
-      setProductSaving(true);
+    const handleSubmit = async (data: FormData) => {
+        try {
+            const filteredList = list.filter(item => item.id !== pid);
+            const { description, isVisible, name, price, type } = data;
+            const apiFormattedData = { description, is_visible: isVisible, name, price, type };
 
-      fetch(`/api/products/${pid}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }).finally(() => {
-        setProductSaving(false);
+            // Update local data immediately (reduce latency to user)
+            mutateList([...filteredList, { ...product, ...data }], false);
 
-        alertsManager.add({
-          autoDismiss: true,
-          messages: [
-            {
-              text: 'Product translations have been saved.',
-            },
-          ],
-          type: 'success',
-        })
-      });
-    } catch (error) {
-      //display error
-      console.error("Error updating the product: ", error);
-      setProductSaving(false);
-    }
-  };
+            // Update product details
+            await fetch(`/api/products/${pid}?context=${encodedContext}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(apiFormattedData),
+            });
 
-  if (hasProductInfoLoadingError) return <ErrorMessage />;
+            // Refetch to validate local data
+            mutateList();
 
-  return (
-    <Loading isLoading={isProductInfoLoading}>
-      <ProductForm
-        formData={formData}
-        onCancel={handleCancel}
-        onSubmit={handleSubmit}
-        isSaving={isProductSaving}
-      />
-    </Loading>
-  );
+            router.push('/products');
+        } catch (error) {
+            console.error('Error updating the product: ', error);
+        }
+    };
+
+    if (isLoading || isInfoLoading) return <Loading />;
+    if (error) return <ErrorMessage error={error} />;
+
+    return (
+        <Form formData={formData} onCancel={handleCancel} onSubmit={handleSubmit} />
+    );
 };
 
 export default ProductInfo;

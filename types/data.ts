@@ -1,5 +1,9 @@
 export interface FormData {
-    [k: string]: any;
+    description: string;
+    isVisible: boolean;
+    name: string;
+    price: number;
+    type: string;
 }
 
 export interface TableItem {
