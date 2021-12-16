@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import * as BigCommerce from "node-bigcommerce";
+import * as jwt from 'jsonwebtoken';
 import { QueryParams, SessionProps } from "../types";
 import { decode, getCookie, removeCookie, setCookie } from "./cookie";
 import db from "./db";
@@ -64,6 +65,18 @@ export async function getSession(req: NextApiRequest) {
   }
 
   return await db.getStore();
+}
+
+// JWT functions to sign/ verify 'context' query param from /api/auth||load
+export function encodePayload({ user, owner, ...session }: SessionProps) {
+  const contextString = session?.context ?? session?.sub;
+  const context = contextString.split('/')[1] || '';
+
+  return jwt.sign({ context, user, owner }, JWT_KEY, { expiresIn: '24h' });
+}
+// Verifies JWT for getSession (product APIs)
+export function decodePayload(encodedContext: string) {
+  return jwt.verify(encodedContext, JWT_KEY);
 }
 
 export async function removeSession(
