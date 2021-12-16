@@ -5,7 +5,7 @@ import { QueryParams, SessionProps } from "../types";
 import { decode, getCookie, removeCookie, setCookie } from "./cookie";
 import db from "./db";
 
-const { AUTH_CALLBACK, CLIENT_ID, CLIENT_SECRET } = process.env;
+const { AUTH_CALLBACK, CLIENT_ID, CLIENT_SECRET, JWT_KEY } = process.env;
 console.log("env", process.env)
 
 
