@@ -25,8 +25,9 @@ const FormErrors = {};
 
 function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: FormProps) {
   const router = useRouter();
-  const { locale: defaultStoreLocale } = useStoreLocale();
-  const [currentLocale, setLocale] = useState<string>(defaultLocale);
+  const { locale: storeLocale } = useStoreLocale();
+  const defaultStoreLocale = storeLocale || defaultLocale;
+  const [currentLocale, setLocale] = useState<string>(defaultStoreLocale);
 
   useEffect(() => {
     defaultStoreLocale && setLocale(defaultStoreLocale);
