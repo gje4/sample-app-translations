@@ -41,3 +41,13 @@ export function useProductInfo(pid: number) {
     isError: error,
   };
 }
+
+export function useStoreLocale() {
+  const { data, error } = useSWR(`/api/locale`, fetcher)
+
+  return {
+    locale: data?.data?.default_shopper_language,
+    isLoading: !data && !error,
+    isError: error
+  }
+}

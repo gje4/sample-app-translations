@@ -1,9 +1,10 @@
 import { Button, Box, Flex, H1, HR, Input, Panel, Select, Form as StyledForm, Textarea, Text, FlexItem } from "@bigcommerce/big-design";
 import { useRouter } from "next/router";
 import { ArrowBackIcon, ArrowUpwardIcon } from "@bigcommerce/big-design-icons";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState, useEffect } from "react";
 import { FormData, StringKeyValue } from "@types";
 import { availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
+import { useStoreLocale } from "@lib/hooks";
 import styled from 'styled-components';
 
 const StyledFlex = styled(Box)`
@@ -24,7 +25,12 @@ const FormErrors = {};
 
 function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: FormProps) {
   const router = useRouter();
+  const { locale: defaultStoreLocale } = useStoreLocale();
   const [currentLocale, setLocale] = useState<string>(defaultLocale);
+
+  useEffect(() => {
+    defaultStoreLocale && setLocale(defaultStoreLocale);
+  }, [defaultStoreLocale, setLocale]);
 
   const getMetafieldValue = (fieldName: string, locale: string) => {
     const filteredFields = productData.metafields.filter(
@@ -122,7 +128,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
                 name="lang"
                 options={availableLocales.map((locale) => ({
                   value: locale.code,
-                  content: `${locale.label} ${locale.code === defaultLocale ? '(Default)': ''}`,
+                  content: `${locale.label} ${locale.code === defaultStoreLocale ? '(Default)': ''}`,
                 }))}
                 placeholder="Select Language"
                 required
@@ -134,6 +140,8 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
         </Flex>
         <HR color="secondary30" />
       </Box>
+
+      {/* Main Form */}
       <StyledForm fullWidth={true} onSubmit={handleSubmit}>
         <Panel>
           {translatableProductFields.map((field) =>
@@ -143,7 +151,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
                   <FlexItem flexGrow={1} paddingBottom="small">
                     <Box style={{maxWidth: '40rem'}}>
                       <Textarea
-                        label={`${field.label} (${defaultLocale})`}
+                        label={`${field.label} (${defaultStoreLocale})`}
                         name={`defaultLocale_${field.key}`}
                         defaultValue={defaultLocaleProductData[field.key]}
                         readOnly={true}
@@ -153,7 +161,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
                     </Box>
                   </FlexItem>
                   
-                  {currentLocale !== defaultLocale && 
+                  {currentLocale !== defaultStoreLocale && 
                     <FlexItem flexGrow={1} paddingBottom="small">
                       <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
                         <Textarea
@@ -174,7 +182,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
                   <FlexItem flexGrow={1} paddingBottom="small">
                     <Box style={{maxWidth: '40rem'}}>
                       <Input
-                        label={`${field.label} (${defaultLocale})`}
+                        label={`${field.label} (${defaultStoreLocale})`}
                         name={`defaultLocale_${field.key}`}
                         defaultValue={defaultLocaleProductData[field.key]}
                         readOnly={true}
@@ -183,7 +191,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
                     </Box>
                   </FlexItem>
 
-                  {currentLocale !== defaultLocale &&
+                  {currentLocale !== defaultStoreLocale &&
                     <FlexItem flexGrow={1} paddingBottom="small">
                       <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
                         <Input
@@ -201,7 +209,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
             </Box>
           )}
           
-          {currentLocale === defaultLocale &&
+          {currentLocale === defaultStoreLocale &&
             <Box style={{ 
               margin: 'auto',
               position: 'fixed',
@@ -231,7 +239,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
             </Button>
             <Button
               type="submit"
-              disabled={(currentLocale === defaultLocale)}
+              disabled={(currentLocale === defaultStoreLocale)}
               isLoading={isSaving}
             >
               Save
