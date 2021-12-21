@@ -6,7 +6,7 @@ import { decode, getCookie, removeCookie, setCookie } from "./cookie";
 import db from "./db";
 
 const { AUTH_CALLBACK, CLIENT_ID, CLIENT_SECRET, JWT_KEY } = process.env;
-console.log("env", process.env)
+// console.log("env", process.env)
 
 
 // Create BigCommerce instance
@@ -20,6 +20,7 @@ const bigcommerce = new BigCommerce({
   headers: { "Accept-Encoding": "*" },
   apiVersion: "v3",
 });
+
 const bigcommerceSigned = new BigCommerce({
   secret: CLIENT_SECRET,
   responseType: "json",
@@ -39,8 +40,8 @@ export function getBCAuth(query: QueryParams) {
   return bigcommerce.authorize(query);
 }
 
-export function getBCVerify({ signed_payload }: QueryParams) {
-  return bigcommerceSigned.verify(signed_payload);
+export function getBCVerify({ signed_payload_jwt }: QueryParams) {
+  return bigcommerceSigned.verifyJWT(signed_payload_jwt);
 }
 
 export async function setSession(

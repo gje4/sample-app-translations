@@ -7,7 +7,7 @@ const SessionContext = createContext({ context: '' });
 const SessionProvider = ({ children }) => {
     const { query } = useRouter();
     const [context, setContext] = useState('');
-
+    
     useEffect(() => {
         if (query.context) {
             setContext(query.context.toString());
