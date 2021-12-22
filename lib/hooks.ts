@@ -38,7 +38,7 @@ export function useProductList(query?: QueryParams) {
     
     // Use an array to send multiple arguments to fetcher
     const { data, error, mutate: mutateList } = useSWR(context ? ['/api/products/list', params] : null, fetcher);
-
+    
     return {
         list: data?.data,
         meta: data?.meta,
