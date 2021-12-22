@@ -1,6 +1,6 @@
+import * as jwt from 'jsonwebtoken';
 import { NextApiRequest, NextApiResponse } from "next";
 import * as BigCommerce from "node-bigcommerce";
-import * as jwt from 'jsonwebtoken';
 import { QueryParams, SessionProps } from "../types";
 import { decode, getCookie, removeCookie, setCookie } from "./cookie";
 import db from "./db";
@@ -56,16 +56,22 @@ export async function setSession(
   db.setStoreUser(session);
 }
 
-export async function getSession(req: NextApiRequest) {
-  const cookies = getCookie(req);
-  if (cookies) {
-    const cookieData = decode(cookies);
-    const accessToken = await db.getStoreToken(cookieData?.storeHash);
+export async function getSession({ query: { context = '' } }: NextApiRequest) {
+  if (typeof context !== 'string') return;
+  const { context: storeHash } = decodePayload(context);
 
-    return { ...cookieData, accessToken };
-  }
+  // not using yet... but soon
 
-  return await db.getStore();
+  // const hasUser = await db.hasStoreUser(storeHash, user?.id);
+
+  // // Before retrieving session/ hitting APIs, check user
+  // if (!hasUser) {
+  //     throw new Error('User is not available. Please login or ensure you have access permissions.');
+  // }
+
+  const accessToken = await db.getStoreToken(storeHash);
+
+  return { accessToken, storeHash };
 }
 
 // JWT functions to sign/ verify 'context' query param from /api/auth||load

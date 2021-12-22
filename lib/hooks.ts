@@ -33,6 +33,7 @@ export function useProducts() {
 
 export function useProductList(query?: QueryParams) {
     const { context } = useSession();
+    
     const params = new URLSearchParams({ ...query, context }).toString();
     
     // Use an array to send multiple arguments to fetcher
