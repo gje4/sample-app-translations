@@ -1,10 +1,11 @@
-import { Button, Box, Flex, FlexItem, H1, HR, Input, Message, Panel, Popover, Select, Form as StyledForm, Textarea, Text } from "@bigcommerce/big-design";
+import { Button, Box, Flex, FlexItem, H1, HR, Input, Panel, Popover, Select, Form as StyledForm, Textarea, Text } from "@bigcommerce/big-design";
 import { useRouter } from "next/router";
 import { ArrowBackIcon, ArrowUpwardIcon, AddIcon } from "@bigcommerce/big-design-icons";
 import { ChangeEvent, FormEvent, useState, useEffect } from "react";
 import { FormData, StringKeyValue } from "@types";
 import { availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
 import { useStoreLocale, useDbLocales } from "@lib/hooks";
+import { alertsManager } from "@pages/_app";
 import styled from 'styled-components';
 
 const StyledFlex = styled(Box)`
@@ -110,7 +111,6 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
 
   // New Locale Form styles, state & handlers
   const [ showNewLocaleForm, setShowNewLocaleForm ] = useState<boolean>(false);
-  const [ newLocaleFormMsg, setNewLocaleFormMsg ] = useState<string>('');
   const [ newLocaleForm, setNewLocaleForm ] = useState({});
   const [ newLocaleCodeRef, setNewLocaleCodeRef ] = useState(null);
   const [ newLocaleLabelRef, setNewLocaleLabelRef ] = useState(null);
@@ -154,9 +154,23 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
 
     if(response.ok) {
       setShowNewLocaleForm(false);
-      setNewLocaleFormMsg('Language Added Successfully!');
+      alertsManager.add({
+        messages: [
+          {
+            text: 'Language Added Successfully!',
+          },
+        ],
+        type: 'success',
+      });
     } else {
-      setNewLocaleFormMsg('Sorry there was a problem adding the langauge');
+      alertsManager.add({
+        messages: [
+          {
+            text: 'Sorry there was a problem adding the langauge',
+          },
+        ],
+        type: 'error',
+      });
     }
   };
 
@@ -275,15 +289,6 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
               </Flex>
             </StyledForm>
           </Flex>
-        )}
-        {newLocaleFormMsg && newLocaleFormMsg !== '' && (
-          <Message 
-            messages={[
-              {
-                text: newLocaleFormMsg
-              }
-            ]}
-          />
         )}
         <HR color="secondary30" />
       </Box>
