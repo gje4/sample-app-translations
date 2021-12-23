@@ -51,3 +51,13 @@ export function useStoreLocale() {
     isError: error
   }
 }
+
+export function useDbLocales() {
+  const { data, error } = useSWR(`/api/db/locales`, fetcher)
+
+  return {
+    dbLocales: data,
+    isLoading: !data && !error,
+    isError: error
+  }
+}
