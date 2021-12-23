@@ -21,13 +21,52 @@ export default async function products(
       try {
         const { accessToken, storeHash } = await getSession(req);
         const bigcommerce = bigcommerceClient(accessToken, storeHash);
-
         const { data: productData } = await bigcommerce.get(`/catalog/products/${pid}`);
-        const { data: metafieldsData } = await bigcommerce.get(`/catalog/products/${pid}/metafields`);
+        
+        // GraphQL Admin API
+        let myHeaders = new Headers();
+        myHeaders.append("Accept", "application/json");
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("X-Auth-Token", `${accessToken}`);
+        myHeaders.append("Accept-Encoding", "application/gzip");
+        
+        const graphql = JSON.stringify({
+          query: `query {
+                    store {
+                      metafields(filters: {resourceType:PRODUCT, resourceIds:[${pid}]}) {
+                          edges {
+                              node {
+                                  key
+                                  value
+                                  namespace
+                            }
+                      }
+                  }
+              }
+          }`,
+          variables: {}
+        })
+        const requestOptions = {
+          method: 'POST',
+          headers: myHeaders,
+          body: graphql,
+          redirect: 'follow'
+        };
+        
+        const response = await fetch(`https://api.bigcommerce.com/stores/${storeHash}/graphql`, requestOptions);
 
-        productData.metafields = metafieldsData;
+        if (!response.ok) throw new Error('[pid.tsx ERROR]: Cannot fetch from requested API product resource');
 
-        res.status(200).json(productData);
+        const json = await response.json();
+        const metafields = json.data.store.metafields.edges.map(edge => edge.node);
+        const product = {
+          ...productData,
+          metafields
+        };
+
+        res.status(200).json(product);
+        console.log('[PRODUCT + METADATA]:', product);
+        
       } catch (error) {
         const { message, response } = error;
         res
