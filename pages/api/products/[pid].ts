@@ -40,8 +40,9 @@ export default async function products(
         let result:any
         const { accessToken, storeHash } = await getSession(req);
         const bigcommerce = bigcommerceClient(accessToken, storeHash);
+        const { data: { default_shopper_language: defaultStoreLocale = defaultLocale}} = await bigcommerce.get('/settings/store/locale');
 
-        if (body['locale'] && body.locale !== defaultLocale) {
+        if (body['locale'] && body.locale !== defaultStoreLocale) {
           // This is for a localization, so create / update metafields
           const selectedLocale = body.locale;
           const { data: existingMetafields } = await bigcommerce.get(`/catalog/products/${pid}/metafields`);
