@@ -129,6 +129,10 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
       ? setNewLocaleError((prev) => ({...prev, [fieldName]: ''})) 
       : setNewLocaleError((prev) => ({...prev, [fieldName]: newLocaleErrors[fieldName]}));
 
+    if(fieldName === 'code' && dbLocales.find(locale => locale.code === value)) {
+      setNewLocaleError((prev) => ({...prev, [fieldName]: 'Sorry, the code you entered is already in use'}));
+    }
+
     newLocaleForm[fieldName] = value;
 
     setNewLocaleForm(newLocaleForm);
