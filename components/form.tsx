@@ -148,7 +148,6 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
 
     const options = {
       method: 'PUT',
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newLocaleForm),
     }
     const response = await fetch('/api/db/locales', options);
