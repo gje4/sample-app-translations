@@ -62,4 +62,22 @@ export function useProductInfo(pid: number, list: ListItem[]) {
     };
 }
 
+export function useStoreLocale() {
+  const { data, error } = useSWR(`/api/locale`, fetcher)
 
+  return {
+    locale: data?.data?.default_shopper_language,
+    isLoading: !data && !error,
+    isError: error
+  }
+}
+
+export function useDbLocales() {
+  const { data, error } = useSWR(`/api/db/locales`, fetcher)
+
+  return {
+    dbLocales: data,
+    isLoading: !data && !error,
+    isError: error
+  }
+}

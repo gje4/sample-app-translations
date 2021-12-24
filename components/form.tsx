@@ -1,9 +1,11 @@
-import { Button, Box, Flex, H1, HR, Input, Panel, Select, Form as StyledForm, Textarea, Text, FlexItem } from "@bigcommerce/big-design";
+import { Button, Box, Flex, FlexItem, H1, HR, Input, Panel, Popover, Select, Form as StyledForm, Textarea, Text } from "@bigcommerce/big-design";
 import { useRouter } from "next/router";
-import { ArrowBackIcon, ArrowUpwardIcon } from "@bigcommerce/big-design-icons";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ArrowBackIcon, ArrowUpwardIcon, AddIcon } from "@bigcommerce/big-design-icons";
+import { ChangeEvent, FormEvent, useState, useEffect } from "react";
 import { FormData, StringKeyValue } from "@types";
 import { availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
+import { useStoreLocale, useDbLocales } from "@lib/hooks";
+import { alertsManager } from "@pages/_app";
 import styled from 'styled-components';
 
 const StyledFlex = styled(Box)`
@@ -24,7 +26,17 @@ const FormErrors = {};
 
 function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: FormProps) {
   const router = useRouter();
-  const [currentLocale, setLocale] = useState<string>(defaultLocale);
+  const { locale: storeLocale } = useStoreLocale();
+  const { isLoading: isDbLocalesLoading, dbLocales } = useDbLocales();
+  const defaultStoreLocale = storeLocale || defaultLocale;
+  const [currentLocale, setLocale] = useState<string>(defaultStoreLocale);
+
+  console.log('productData: ', productData);
+  console.log('dbLocales: ', dbLocales);
+
+  useEffect(() => {
+    defaultStoreLocale && setLocale(defaultStoreLocale);
+  }, [defaultStoreLocale, setLocale]);
 
   const getMetafieldValue = (fieldName: string, locale: string) => {
     const filteredFields = productData.metafields.filter(
@@ -66,6 +78,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
     setLocale(selectedLocale);
   };
 
+  // Product Form handlers
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -96,9 +109,76 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
     onSubmit(form, currentLocale);
   };
 
+  // New Locale Form styles, state & handlers
+  const [ showNewLocaleForm, setShowNewLocaleForm ] = useState<boolean>(false);
+  const [ newLocaleForm, setNewLocaleForm ] = useState({});
+  const [ newLocaleCodeRef, setNewLocaleCodeRef ] = useState(null);
+  const [ newLocaleLabelRef, setNewLocaleLabelRef ] = useState(null);
+  const newLocaleErrors = {
+    label: 'Please enter a label(special characters not allowed)',
+    code: 'Please enter lowercase, two character code',
+  };
+  const [ newLocaleError, setNewLocaleError ] = useState({});
+  const handleNewLocaleChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { target } = event;
+    const { name: fieldName, value } = target;
+    const regex = RegExp(target.pattern, 'g');
+
+    regex.test(target.value) 
+      ? setNewLocaleError((prev) => ({...prev, [fieldName]: ''})) 
+      : setNewLocaleError((prev) => ({...prev, [fieldName]: newLocaleErrors[fieldName]}));
+
+    if(fieldName === 'code' && dbLocales.find(locale => locale.code === value)) {
+      setNewLocaleError((prev) => ({...prev, [fieldName]: 'Sorry, the code you entered is already in use'}));
+    }
+
+    newLocaleForm[fieldName] = value;
+
+    setNewLocaleForm(newLocaleForm);
+
+    console.log('fieldname: ', fieldName);
+    console.log('new locale errors: ', newLocaleError);
+  };
+  const handleNewLocaleSubmit = async (event: FormEvent<EventTarget>) => {
+    event.preventDefault();
+
+    console.log('new locale form data: ', newLocaleForm);
+
+    const options = {
+      method: 'PUT',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newLocaleForm),
+    }
+    const response = await fetch('/api/db/locales', options);
+
+    if(response.ok) {
+      setShowNewLocaleForm(false);
+      alertsManager.add({
+        messages: [
+          {
+            text: 'Language Added Successfully!',
+          },
+        ],
+        type: 'success',
+      });
+    } else {
+      alertsManager.add({
+        messages: [
+          {
+            text: 'Sorry there was a problem adding the langauge',
+          },
+        ],
+        type: 'error',
+      });
+    }
+  };
+
   return (
     <>
-      <Box marginBottom="xxLarge">
+      {/* Header */}
+      <Box marginBottom="xxLarge" as="header">
         <Flex>
           <FlexItem flexGrow={1} alignSelf="flex-start">
             <Button
@@ -118,126 +198,210 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
           </FlexItem>
           <FlexItem flexGrow={0}>
             <Box paddingBottom="small">
-              <Select
-                name="lang"
-                options={availableLocales.map((locale) => ({
-                  value: locale.code,
-                  content: `${locale.label} ${locale.code === defaultLocale ? '(Default)': ''}`,
-                }))}
-                placeholder="Select Language"
-                required
-                value={currentLocale}
-                onOptionChange={handleLocaleChange}
-              />
+              {!dbLocales && (
+                <Select
+                  name="lang"
+                  options={availableLocales.map((locale) => ({
+                    value: locale.code,
+                    content: `${locale.label} ${locale.code === defaultStoreLocale ? '(Default)': ''}`,
+                  }))}
+                  placeholder="Select Language"
+                  required
+                  value={currentLocale}
+                  onOptionChange={handleLocaleChange}
+                />
+              )}
+              {dbLocales && (
+                  <Select
+                    name="lang"
+                    options={dbLocales.map((locale) => ({
+                      value: locale.code,
+                      content: `${locale.label} ${locale.code === defaultStoreLocale ? '(Default)': ''}`,
+                    }))}
+                    placeholder="Select Language"
+                    required
+                    value={currentLocale}
+                    onOptionChange={handleLocaleChange}
+                    action={{
+                      actionType: 'normal' as const,
+                      content: 'Add Language',
+                      icon: <AddIcon />,
+                      onActionClick: () => setShowNewLocaleForm(true),
+                    }}
+                  />
+              )}
             </Box>
           </FlexItem>
         </Flex>
+
+        {/* New Locale Form */}
+        {showNewLocaleForm && (
+          <Flex justifyContent="flex-end">
+            <StyledForm onSubmit={handleNewLocaleSubmit}>
+              <Flex alignItems="flex-end" backgroundColor="secondary20" padding="medium" border="box" borderRadius="normal">
+                <FlexItem marginRight="medium">
+                  <Input
+                    ref={setNewLocaleLabelRef}
+                    label="New Language Label"
+                    name="label"
+                    required={true}
+                    onChange={handleNewLocaleChange}
+                    maxLength={48}
+                    pattern="^[a-zA-z0-9\s]{1,48}$"
+                    error={newLocaleError['label']}
+                  />
+                  <Popover
+                    anchorElement={newLocaleLabelRef}
+                    isOpen={newLocaleError['label'] && newLocaleError['label'] !== ''}
+                    label="Locale Label Error"
+                    placement="bottom-end"
+                  >
+                    {newLocaleError['label']}
+                  </Popover>
+                </FlexItem>
+                <FlexItem marginRight="medium">
+                  <Input
+                    ref={setNewLocaleCodeRef}
+                    label="Code"
+                    name="code"
+                    required={true}
+                    onChange={handleNewLocaleChange}
+                    size={2}
+                    maxLength={2}
+                    pattern="^[a-z0-9]{2}$"
+                    error={newLocaleError['code']}
+                  />
+                  <Popover
+                    anchorElement={newLocaleCodeRef}
+                    isOpen={newLocaleError['code'] && newLocaleError['code'] !== ''}
+                    label="Locale Code Error"
+                    placement="bottom-end"
+                  >
+                    {newLocaleError['code']}
+                  </Popover>
+                </FlexItem>
+                <FlexItem>
+                  <Button
+                    type="submit"
+                  >
+                    Add
+                  </Button>
+                </FlexItem>
+              </Flex>
+            </StyledForm>
+          </Flex>
+        )}
         <HR color="secondary30" />
       </Box>
+
+      {/* Main Form */}
       <StyledForm fullWidth={true} onSubmit={handleSubmit}>
-        <Panel>
-          {translatableProductFields.map((field) =>
-            <Box key={`${field.key}_${currentLocale}`}>
-              {field.type === 'textarea' && 
-                <Flex>
-                  <FlexItem flexGrow={1} paddingBottom="small">
-                    <Box style={{maxWidth: '40rem'}}>
-                      <Textarea
-                        label={`${field.label} (${defaultLocale})`}
-                        name={`defaultLocale_${field.key}`}
-                        defaultValue={defaultLocaleProductData[field.key]}
-                        readOnly={true}
-                        rows={5}
-                        required={field.required}
-                      />
-                    </Box>
-                  </FlexItem>
-                  
-                  {currentLocale !== defaultLocale && 
+        <Box style={{position: 'relative'}}>
+          <Panel>
+            {translatableProductFields.map((field) =>
+              <Box key={`${field.key}_${currentLocale}`}>
+                {field.type === 'textarea' && 
+                  <Flex>
                     <FlexItem flexGrow={1} paddingBottom="small">
-                      <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
+                      <Box style={{maxWidth: '40rem'}}>
                         <Textarea
-                          label={`${field.label} (${currentLocale})`}
-                          name={field.key}
-                          value={form[field.key]}
-                          onChange={handleChange}
-                          required={field.required}
+                          label={`${field.label} (${defaultStoreLocale})`}
+                          name={`defaultLocale_${field.key}`}
+                          defaultValue={defaultLocaleProductData[field.key]}
+                          readOnly={true}
                           rows={5}
-                        />
-                      </Box>
-                    </FlexItem>
-                  }
-                </Flex>
-              }
-              {field.type === 'input' && 
-                <Flex>
-                  <FlexItem flexGrow={1} paddingBottom="small">
-                    <Box style={{maxWidth: '40rem'}}>
-                      <Input
-                        label={`${field.label} (${defaultLocale})`}
-                        name={`defaultLocale_${field.key}`}
-                        defaultValue={defaultLocaleProductData[field.key]}
-                        readOnly={true}
-                        required={field.required}
-                      />
-                    </Box>
-                  </FlexItem>
-
-                  {currentLocale !== defaultLocale &&
-                    <FlexItem flexGrow={1} paddingBottom="small">
-                      <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
-                        <Input
-                          label={`${field.label} (${currentLocale})`}
-                          name={field.key}
-                          value={form[field.key]}
-                          onChange={handleChange}
                           required={field.required}
                         />
                       </Box>
                     </FlexItem>
-                  }
-                </Flex>
-              }
-            </Box>
-          )}
-          
-          {currentLocale === defaultLocale &&
-            <Box style={{ 
-              margin: 'auto',
-              position: 'fixed',
-              textAlign: 'right',
-              right: '5rem',
-              width: '15rem',
-              top: '15rem',
-              backgroundColor: 'white',
-              padding: '1rem',
-              opacity: '0.9',
-              }}>
-              <ArrowUpwardIcon color="primary60" size="xLarge" />
-              <Text color="primary60">Select a locale above to start editing translations for this product.</Text>
-            </Box> 
-          }
-        </Panel>
+                    
+                    {currentLocale !== defaultStoreLocale && 
+                      <FlexItem flexGrow={1} paddingBottom="small">
+                        <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
+                          <Textarea
+                            label={`${field.label} (${currentLocale})`}
+                            name={field.key}
+                            value={form[field.key]}
+                            onChange={handleChange}
+                            required={field.required}
+                            rows={5}
+                          />
+                        </Box>
+                      </FlexItem>
+                    }
+                  </Flex>
+                }
+                {field.type === 'input' && 
+                  <Flex>
+                    <FlexItem flexGrow={1} paddingBottom="small">
+                      <Box style={{maxWidth: '40rem'}}>
+                        <Input
+                          label={`${field.label} (${defaultStoreLocale})`}
+                          name={`defaultLocale_${field.key}`}
+                          defaultValue={defaultLocaleProductData[field.key]}
+                          readOnly={true}
+                          required={field.required}
+                        />
+                      </Box>
+                    </FlexItem>
 
-        <StyledFlex backgroundColor="white" border="box" padding="medium">
-          <Flex justifyContent="flex-end">
-            <Button
-              marginRight="medium"
-              type="button"
-              variant="subtle"
-              onClick={onCancel}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={(currentLocale === defaultLocale)}
-              isLoading={isSaving}
-            >
-              Save
-            </Button>
-          </Flex>
-        </StyledFlex>
+                    {currentLocale !== defaultStoreLocale &&
+                      <FlexItem flexGrow={1} paddingBottom="small">
+                        <Box paddingLeft={{ mobile: "none", tablet: "xLarge" }} style={{maxWidth: '40rem'}}>
+                          <Input
+                            label={`${field.label} (${currentLocale})`}
+                            name={field.key}
+                            value={form[field.key]}
+                            onChange={handleChange}
+                            required={field.required}
+                          />
+                        </Box>
+                      </FlexItem>
+                    }
+                  </Flex>
+                }
+              </Box>
+            )}
+            
+            {currentLocale === defaultStoreLocale &&
+              <Box style={{ 
+                margin: 'auto',
+                position: 'absolute',
+                textAlign: 'right',
+                right: '2rem',
+                width: '15rem',
+                top: '1rem',
+                backgroundColor: 'white',
+                padding: '1rem',
+                opacity: '0.9',
+                }}>
+                <ArrowUpwardIcon color="primary60" size="xLarge" />
+                <Text color="primary60">Select a locale above to start editing translations for this product.</Text>
+              </Box> 
+            }
+          </Panel>
+
+          {/* Actions Fixed Footer */}
+          <StyledFlex backgroundColor="white" border="box" padding="medium">
+            <Flex justifyContent="flex-end">
+              <Button
+                marginRight="medium"
+                type="button"
+                variant="subtle"
+                onClick={onCancel}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={(currentLocale === defaultStoreLocale)}
+                isLoading={isSaving}
+              >
+                Save
+              </Button>
+            </Flex>
+          </StyledFlex>
+        </Box>
       </StyledForm>
     </>
   );
