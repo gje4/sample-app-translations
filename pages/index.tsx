@@ -10,17 +10,24 @@ import { TableItem } from '@types';
 
 const Products = () => {
   const router = useRouter();
+
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+  const [keyword, setKeyword] = useState('')
+
   const {
-    isError,
+    error: isError,
     isLoading,
-    list: productList = { data: [], meta: {}},
-    page: currentPage,
-    limit: itemsPerPage,
-    setPage: setCurrentPage,
-    setLimit: setItemsPerPage,
-    setKeyword
-  } = useProductList();
-  const tableItems: TableItem[] = productList?.data.map(({ id, inventory_level: stock, name, price }) => ({
+    list,
+    meta
+  } = useProductList({page: String(page), limit: String(limit), keyword});
+
+  const productList =  {
+    list: list ?? [],
+    meta: meta ?? {}
+  }
+  
+  const tableItems: TableItem[] = productList.list?.map(({ id, inventory_level: stock, name, price }) => ({
     id,
     name,
     price,
@@ -31,8 +38,8 @@ const Products = () => {
   const [ searchInput, setSearchInput ] = useState('');
 
   const onItemsPerPageChange = (newRange) => {
-    setCurrentPage(1);
-    setItemsPerPage(newRange);
+    setPage(1);
+    setLimit(newRange);
   };
 
   const handleSearch = (event: React.FormEvent) => {
@@ -107,12 +114,12 @@ const Products = () => {
             items={tableItems}
             itemName="Products"
             pagination={{
-                currentPage,
+                currentPage: page,
                 totalItems: productList?.meta?.pagination?.total,
-                onPageChange: setCurrentPage,
+                onPageChange: setPage,
                 itemsPerPageOptions,
                 onItemsPerPageChange,
-                itemsPerPage,
+                itemsPerPage: limit,
             }}
             stickyHeader
           />

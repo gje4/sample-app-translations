@@ -1,11 +1,12 @@
+import * as jwt from 'jsonwebtoken';
 import { NextApiRequest, NextApiResponse } from "next";
 import * as BigCommerce from "node-bigcommerce";
 import { QueryParams, SessionProps } from "../types";
 import { decode, getCookie, removeCookie, setCookie } from "./cookie";
 import db from "./db";
 
-const { AUTH_CALLBACK, CLIENT_ID, CLIENT_SECRET } = process.env;
-console.log("env", process.env)
+const { AUTH_CALLBACK, CLIENT_ID, CLIENT_SECRET, JWT_KEY } = process.env;
+// console.log("env", process.env)
 
 
 // Create BigCommerce instance
@@ -19,6 +20,7 @@ const bigcommerce = new BigCommerce({
   headers: { "Accept-Encoding": "*" },
   apiVersion: "v3",
 });
+
 const bigcommerceSigned = new BigCommerce({
   secret: CLIENT_SECRET,
   responseType: "json",
@@ -38,8 +40,8 @@ export function getBCAuth(query: QueryParams) {
   return bigcommerce.authorize(query);
 }
 
-export function getBCVerify({ signed_payload }: QueryParams) {
-  return bigcommerceSigned.verify(signed_payload);
+export function getBCVerify({ signed_payload_jwt }: QueryParams) {
+  return bigcommerceSigned.verifyJWT(signed_payload_jwt);
 }
 
 export async function setSession(
@@ -54,16 +56,34 @@ export async function setSession(
   db.setStoreUser(session);
 }
 
-export async function getSession(req: NextApiRequest) {
-  const cookies = getCookie(req);
-  if (cookies) {
-    const cookieData = decode(cookies);
-    const accessToken = await db.getStoreToken(cookieData?.storeHash);
+export async function getSession({ query: { context = '' } }: NextApiRequest) {
+  if (typeof context !== 'string') return;
+  const { context: storeHash } = decodePayload(context);
 
-    return { ...cookieData, accessToken };
-  }
+  // not using yet... but soon
 
-  return await db.getStore();
+  // const hasUser = await db.hasStoreUser(storeHash, user?.id);
+
+  // // Before retrieving session/ hitting APIs, check user
+  // if (!hasUser) {
+  //     throw new Error('User is not available. Please login or ensure you have access permissions.');
+  // }
+
+  const accessToken = await db.getStoreToken(storeHash);
+
+  return { accessToken, storeHash };
+}
+
+// JWT functions to sign/ verify 'context' query param from /api/auth||load
+export function encodePayload({ user, owner, ...session }: SessionProps) {
+  const contextString = session?.context ?? session?.sub;
+  const context = contextString.split('/')[1] || '';
+
+  return jwt.sign({ context, user, owner }, JWT_KEY, { expiresIn: '24h' });
+}
+// Verifies JWT for getSession (product APIs)
+export function decodePayload(encodedContext: string) {
+  return jwt.verify(encodedContext, JWT_KEY);
 }
 
 export async function removeSession(
