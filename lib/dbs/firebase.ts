@@ -148,3 +148,4 @@ export async function deleteStore({ store_hash: storeHash }: SessionProps) {
 
   await ref.delete();
 }
+

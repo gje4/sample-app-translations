@@ -1,5 +1,6 @@
 import { AlertsManager, createAlertsManager, Box, GlobalStyles } from "@bigcommerce/big-design";
 import type { AppProps } from "next/app";
+import SessionProvider from '../context/session';
 
 const MyApp = ({ Component, pageProps }: AppProps) => {  
   return (
@@ -8,7 +9,9 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
 
       <Box marginHorizontal="xxxLarge" marginVertical="xxLarge">
         <AlertsManager manager={alertsManager} />
-        <Component {...pageProps} />
+        <SessionProvider>
+          <Component {...pageProps} />
+        </SessionProvider>
       </Box>
     </>
   );

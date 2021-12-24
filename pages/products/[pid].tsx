@@ -1,29 +1,35 @@
-import { useState } from "react";
 import { useRouter } from "next/router";
-import { alertsManager } from "@pages/_app";
+import { useState } from "react";
 import ErrorMessage from "@components/error";
 import ProductForm from "@components/form";
 import Loading from "@components/loading";
 import { useProductInfo, useProductList } from "@lib/hooks";
+import { alertsManager } from "@pages/_app";
 import { FormData } from "@types";
+import { useSession } from "context/session";
 
 const ProductInfo = () => {
   const router = useRouter();
   const pid = Number(router.query?.pid);
-  const { isLoading: isProductInfoLoading, isError: hasProductInfoLoadingError, product } = useProductInfo(pid);
+  const { list = [] }  = useProductList();
+  const { isLoading: isProductInfoLoading, error: hasProductInfoLoadingError, product } = useProductInfo(pid, list);
   const { description, is_visible: isVisible, name, metafields } = product ?? {};
   const formData = { description, isVisible, name, metafields };
   const [ isProductSaving, setProductSaving ] = useState(false);
+  const { context } = useSession();
 
   const handleCancel = () => router.push("/");
 
   const handleSubmit = (data: FormData, selectedLocale: string) => {
     try {
       data.locale = selectedLocale;
+
+      
+
       // Update product details
       setProductSaving(true);
 
-      fetch(`/api/products/${pid}`, {
+      fetch(`/api/products/${pid}?context=${context}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

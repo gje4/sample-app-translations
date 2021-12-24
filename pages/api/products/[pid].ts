@@ -4,6 +4,7 @@ import { defaultLocale, translatableProductFields } from "@lib/constants";
 
 const getMetafieldId = (metafields: any, fieldName: string, locale: string) => {
   const filteredFields = metafields.filter((meta) => meta.namespace === locale && meta.key === fieldName);
+
   return filteredFields[0]?.id;
 }
 
@@ -36,6 +37,7 @@ export default async function products(
       }
       break;
     case "PUT":
+      console.log("PUTTING IT DOWN")
       try {
         let result:any
         const { accessToken, storeHash } = await getSession(req);
@@ -43,6 +45,7 @@ export default async function products(
         const { data: { default_shopper_language: defaultStoreLocale = defaultLocale}} = await bigcommerce.get('/settings/store/locale');
 
         if (body['locale'] && body.locale !== defaultStoreLocale) {
+
           // This is for a localization, so create / update metafields
           const selectedLocale = body.locale;
           const { data: existingMetafields } = await bigcommerce.get(`/catalog/products/${pid}/metafields`);
