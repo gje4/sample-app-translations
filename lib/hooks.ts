@@ -42,6 +42,16 @@ export function useProductInfo(pid: number) {
   };
 }
 
+export function useDbStoreData() {
+  const { data, error } = useSWR(`/api/db/store`, fetcher)
+
+  return {
+    store: data,
+    isLoading: !data && !error,
+    isError: error
+  }
+}
+
 export function useStoreLocale() {
   const { data, error } = useSWR(`/api/locale`, fetcher)
 

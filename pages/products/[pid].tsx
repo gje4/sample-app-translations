@@ -9,7 +9,7 @@ import { FormData } from "@types";
 
 const ProductInfo = () => {
   const router = useRouter();
-  const pid = Number(router.query?.pid);
+  const pid = router.query?.pid ? Number(router.query?.pid) : 3;
   const { isLoading: isProductInfoLoading, isError: hasProductInfoLoadingError, product } = useProductInfo(pid);
   const { description, is_visible: isVisible, name, metafields } = product ?? {};
   const formData = { description, isVisible, name, metafields };
@@ -17,9 +17,12 @@ const ProductInfo = () => {
 
   const handleCancel = () => router.push("/");
 
-  const handleSubmit = (data: FormData, selectedLocale: string) => {
+  const handleSubmit = (data: FormData, selectedLocale: string, useConciseStorage: boolean) => {
     try {
       data.locale = selectedLocale;
+      data.useConciseMetafieldStorage = useConciseStorage;
+      console.log('form data: ', data);
+
       // Update product details
       setProductSaving(true);
 
@@ -47,6 +50,25 @@ const ProductInfo = () => {
     }
   };
 
+  const handleDelete = async (metafields: Array<any>) => {
+    try {
+      const options = {
+        method: 'DELETE',
+      };
+      
+      console.log('metafields to delete: ', metafields);
+      
+      for(let i = 0; i < metafields.length; i++) {
+        const metafieldId = metafields[i].id;
+        const response = await fetch(`/api/products/${pid}/metafields/${metafieldId}`, options);
+      }
+    
+    } catch (error) {
+      //display error
+      console.error("Error deleting the metafields: ", error);
+    }
+  }
+
   if (hasProductInfoLoadingError) return <ErrorMessage />;
 
   return (
@@ -55,6 +77,7 @@ const ProductInfo = () => {
         formData={formData}
         onCancel={handleCancel}
         onSubmit={handleSubmit}
+        onDelete={handleDelete}
         isSaving={isProductSaving}
       />
     </Loading>
