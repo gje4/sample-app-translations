@@ -1,6 +1,7 @@
 import firebase from "firebase/app";
 import "firebase/firestore";
 import { SessionProps, StoreData, UserData } from "../../types";
+import { availableLocales } from "@lib/constants";
 
 // Firebase config and initialization
 // Prod applications might use config file
@@ -47,9 +48,10 @@ export async function setStore(session: SessionProps) {
   // Only set on app install or update
   if (!accessToken || !scope) return null;
 
+  const locales = availableLocales.map(locale => ({ code: locale.code, label: locale.label }));
   const storeHash = context?.split("/")[1] || "";
   const ref = db.collection("store").doc(storeHash);
-  const data = { accessToken, adminId: id, scope };
+  const data = { accessToken, adminId: id, locales, scope };
 
   await ref.set(data);
 }
@@ -110,6 +112,30 @@ export async function getStore() {
   return storeDoc?.exists ? storeData : null;
 }
 
+export async function getDbLocales(storeHash: string) {
+  if (!storeHash) return null;
+  const storeDoc = await db.collection("store").doc(storeHash).get();
+
+  return storeDoc?.exists ? storeDoc.data()?.locales : null;
+}
+
+export async function addDbLocale(storeHash: string, locale: object) {
+  if (!storeHash) return null;
+  const storeDoc = await db.collection("store").doc(storeHash).get();
+  const locales = storeDoc?.exists ? storeDoc.data()?.locales : null;
+  const ref = db.collection("store").doc(storeHash);
+
+  return ref.update({
+    locales: [
+      ...locales,
+      {
+        code: locale.code,
+        label: locale.label
+      }
+    ]
+  });
+}
+
 export async function getStoreToken(storeHash: string) {
   if (!storeHash) return null;
   const storeDoc = await db.collection("store").doc(storeHash).get();
@@ -122,3 +148,4 @@ export async function deleteStore({ store_hash: storeHash }: SessionProps) {
 
   await ref.delete();
 }
+

@@ -77,6 +77,10 @@ export async function getStoreToken(storeHash: string) {
     return results.length ? results[0].accessToken : null;
 }
 
+export async function getDbLocales(storeHash: string) {
+    return null;
+}
+
 export async function deleteStore({ store_hash: storeHash }: SessionProps) {
     await query('DELETE FROM stores WHERE storeHash = ?', storeHash);
 }
