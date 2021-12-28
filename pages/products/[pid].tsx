@@ -9,7 +9,7 @@ import { FormData } from "@types";
 
 const ProductInfo = () => {
   const router = useRouter();
-  const pid = router.query?.pid ? Number(router.query?.pid) : 3;
+  const pid = Number(router.query?.pid);
   const { isLoading: isProductInfoLoading, isError: hasProductInfoLoadingError, product } = useProductInfo(pid);
   const { description, is_visible: isVisible, name, metafields } = product ?? {};
   const formData = { description, isVisible, name, metafields };
