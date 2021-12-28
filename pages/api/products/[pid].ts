@@ -85,6 +85,7 @@ export default async function products(
               );
 
               if(existingConciseMetafield) {
+                // Mutate existing concise metafields that are being updated
                 updatedMetafields = updatedMetafields
                   ?.filter(meta => meta.value !== '')
                   ?.map(meta => {
@@ -111,7 +112,7 @@ export default async function products(
 
             console.log('updated metafields: ', updatedMetafields);
 
-            // Check if concise metafield exists
+            // Check if parent concise metafield exists
             if (existingMetafieldId) {
               // Update the metafield
               const { data } = await bigcommerce.put(
@@ -134,7 +135,7 @@ export default async function products(
               );
               metafieldResults.push(data);
             }
-
+            
             console.log('product api results: ', metafieldResults);
 
           } else {
