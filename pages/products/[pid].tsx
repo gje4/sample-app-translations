@@ -63,7 +63,7 @@ const ProductInfo = () => {
       
       for(let i = 0; i < metafields.length; i++) {
         const metafieldId = metafields[i].id;
-        const response = await fetch(`/api/products/${pid}/metafields/${metafieldId}`, options);
+        const response = await fetch(`/api/products/${pid}/metafields/${metafieldId}?context=${context}`, options);
       }
     
     } catch (error) {

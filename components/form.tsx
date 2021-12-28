@@ -219,7 +219,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
           useConciseMetafieldStorage: !conciseStorageSwitch
         })
       }
-      const response = await fetch('/api/db/conciseStorage', options);
+      const response = await fetch(`/api/db/conciseStorage?context=${context}`, options);
       const { message } = await response.json();
 
       if(!response.ok || message !== 'success') {
