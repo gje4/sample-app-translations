@@ -63,7 +63,10 @@ export function useProductInfo(pid: number, list: ListItem[]) {
 }
 
 export function useStoreLocale() {
-  const { data, error } = useSWR(`/api/locale`, fetcher)
+  const { context } = useSession();
+  const params = new URLSearchParams({ context }).toString();
+
+  const { data, error } = useSWR(context ? [`/api/locale`, params] : null, fetcher);
 
   return {
     locale: data?.data?.default_shopper_language,
@@ -73,7 +76,10 @@ export function useStoreLocale() {
 }
 
 export function useDbLocales() {
-  const { data, error } = useSWR(`/api/db/locales`, fetcher)
+  const { context } = useSession();
+  const params = new URLSearchParams({ context }).toString();
+
+  const { data, error } = useSWR(context ? [`/api/db/locales`, params] : null, fetcher);
 
   return {
     dbLocales: data,
