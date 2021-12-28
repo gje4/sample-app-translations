@@ -18,7 +18,7 @@ const StyledFlex = styled(Box)`
 interface FormProps {
   formData: FormData;
   onCancel(): void;
-  onSubmit(form: FormData, selectedLocale: string, useConsiseStorage: boolean): void;
+  onSubmit(form: FormData, selectedLocale: string, useConciseStorage: boolean): void;
   isSaving: boolean;
   onDelete(): void;
 } 

@@ -8,7 +8,7 @@ const getConciseMetafields = (metafields: any) => {
   // return concise metafields object and decode json
   const conciseMetafields = metafields.find(meta => meta.key === 'multilingual_metafields');
 
-  if(conciseMetafields?.length > 0) {
+  if(conciseMetafields?.value) {
     return JSON.parse(conciseMetafields?.value);
   } else {
     return [];
