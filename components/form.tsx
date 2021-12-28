@@ -6,6 +6,7 @@ import { FormData, StringKeyValue } from "@types";
 import { availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
 import { useStoreLocale, useDbLocales } from "@lib/hooks";
 import { alertsManager } from "@pages/_app";
+import { useSession } from '../context/session';
 import styled from 'styled-components';
 
 const StyledFlex = styled(Box)`
@@ -26,6 +27,7 @@ const FormErrors = {};
 
 function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: FormProps) {
   const router = useRouter();
+  const { context } = useSession();
   const { locale: storeLocale } = useStoreLocale();
   const { isLoading: isDbLocalesLoading, dbLocales } = useDbLocales();
   const defaultStoreLocale = storeLocale || defaultLocale;
@@ -150,7 +152,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
       method: 'PUT',
       body: JSON.stringify(newLocaleForm),
     }
-    const response = await fetch('/api/db/locales', options);
+    const response = await fetch(`/api/db/locales?context=${context}`, options);
 
     if(response.ok) {
       setShowNewLocaleForm(false);

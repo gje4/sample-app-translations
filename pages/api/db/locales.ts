@@ -21,11 +21,6 @@ export default async function locales(req: NextApiRequest, res: NextApiResponse)
       break;
     case "PUT":
       try {
-        const locales = await db.getDbLocales(storeHash);
-        const locale = {
-          code: "pl",
-          label: "Pig Latin"
-        }
         console.log('request body: ', body);
         await db.addDbLocale(storeHash, JSON.parse(body));
 
