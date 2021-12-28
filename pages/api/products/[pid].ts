@@ -85,7 +85,7 @@ export default async function products(
               );
 
               if(existingConciseMetafield) {
-                updatedMetafields = conciseMetafields
+                updatedMetafields = updatedMetafields
                   ?.filter(meta => meta.value !== '')
                   ?.map(meta => {
                     if(meta.key === productField.key && meta.namespace === selectedLocale) {
