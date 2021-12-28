@@ -62,6 +62,16 @@ export function useProductInfo(pid: number, list: ListItem[]) {
     };
 }
 
+export function useDbStoreData() {
+  const { data, error } = useSWR(`/api/db/store`, fetcher)
+
+  return {
+    store: data,
+    isLoading: !data && !error,
+    isError: error
+  }
+}
+
 export function useStoreLocale() {
   const { context } = useSession();
   const params = new URLSearchParams({ context }).toString();
