@@ -121,14 +121,6 @@ export default async function products(
                 }
               );
 
-              // To reset the multilingual_metafields metafield values:
-              // const { data } = await bigcommerce.put(
-              //   `/catalog/products/${pid}/metafields/${existingMetafieldId}`,
-              //   {
-              //     value: "[]",
-              //     namespace: 'concise_format',
-              //   }
-              // );
               metafieldResults.push(data);
             } else {
               const { data } = await bigcommerce.post(
