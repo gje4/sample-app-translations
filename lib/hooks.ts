@@ -53,22 +53,24 @@ export function useProductInfo(pid: number, list: ListItem[]) {
     const params = new URLSearchParams({ context }).toString();
     const product = list.find(item => item.id === pid);
     // Conditionally fetch product if it doesn't exist in the list (e.g. deep linking)
-    const { data, error } = useSWR(!product && context ? [`/api/products/${pid}`, params] : null, fetcher);
+    const { data, error, mutate: mutateInfo } = useSWR(!product && context ? [`/api/products/${pid}`, params] : null, fetcher);
 
     return {
         product: product ?? data,
         isLoading: product ? false : (!data && !error),
         error,
+        mutateInfo,
     };
 }
 
 export function useDbStoreData() {
-  const { data, error } = useSWR(`/api/db/store`, fetcher)
+  const { data, error, mutate: mutateStore } = useSWR(`/api/db/store`, fetcher);
 
   return {
     store: data,
     isLoading: !data && !error,
-    isError: error
+    isError: error,
+    mutateStore,
   }
 }
 

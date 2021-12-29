@@ -55,7 +55,6 @@ export default async function products(
       }
       break;
     case "PUT":
-      console.log("PUTTING IT DOWN")
       try {
         let result:any
         const { accessToken, storeHash } = await getSession(req);

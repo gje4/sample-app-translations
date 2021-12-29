@@ -31,7 +31,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
   const { context } = useSession();
   const { locale: storeLocale } = useStoreLocale();
   // const { isLoading: isDbLocalesLoading, dbLocales } = useDbLocales();
-  const { isLoading: isStoreDataLoading, store: storeData } = useDbStoreData();
+  const { isLoading: isStoreDataLoading, store: storeData, mutateStore } = useDbStoreData();
   const { useConciseMetafieldStorage: useConciseStorage = useConciseMetafieldStorage, locales: dbLocales = availableLocales } = storeData || {};
   const [ conciseStorageSwitch, setConciseStorageSwitch ] = useState(useConciseStorage);
   console.log('store data: ', storeData);
@@ -50,6 +50,8 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
   }, [defaultStoreLocale, setLocale, isStoreDataLoading, useConciseStorage]);
 
   const getMetafieldValue = (fieldName: string, locale: string) => {
+    if (productData?.metafields === undefined) return null;
+
     if(conciseStorageSwitch === true) {
       let conciseMetafields = productData.metafields.filter(
         (meta) => meta.key === 'multilingual_metafields'
@@ -153,6 +155,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
     code: 'Please enter lowercase, two character code',
   };
   const [ newLocaleError, setNewLocaleError ] = useState({});
+
   const handleNewLocaleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -196,6 +199,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
         ],
         type: 'success',
       });
+      mutateStore('/api/db/locales');
     } else {
       alertsManager.add({
         messages: [

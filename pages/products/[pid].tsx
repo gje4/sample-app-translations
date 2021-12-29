@@ -11,8 +11,8 @@ import { useSession } from "context/session";
 const ProductInfo = () => {
   const router = useRouter();
   const pid = Number(router.query?.pid);
-  const { list = [] }  = useProductList();
-  const { isLoading: isProductInfoLoading, error: hasProductInfoLoadingError, product } = useProductInfo(pid, list);
+  const { list = [], mutateList }  = useProductList();
+  const { isLoading: isProductInfoLoading, error: hasProductInfoLoadingError, mutateInfo, product } = useProductInfo(pid, list);
   const { description, is_visible: isVisible, name, metafields } = product ?? {};
   const formData = { description, isVisible, name, metafields };
   const [ isProductSaving, setProductSaving ] = useState(false);
@@ -44,7 +44,9 @@ const ProductInfo = () => {
             },
           ],
           type: 'success',
-        })
+        });
+        mutateList('/api/products/list');
+        mutateInfo(`/api/products/${pid}`);
       });
     } catch (error) {
       //display error
