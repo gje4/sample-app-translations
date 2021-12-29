@@ -450,7 +450,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
           <StyledFlex backgroundColor="white" border="box" padding="medium">
             <Flex justifyContent="flex-end">
               <Flex alignItems="center" style={{marginRight: 'auto'}}>
-                <FlexItem marginRight="xxxLarge">
+                <FlexItem marginRight="xLarge">
                   <Button
                     type="button"
                     onClick={onDeleteMetafields}
@@ -459,11 +459,11 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
                   </Button>
                 </FlexItem>
                 <Flex alignItems="center">
+                  <H4 marginBottom="none" marginRight="medium">Use Concise Metafield Storage</H4>
                   <Switch
                     checked={conciseStorageSwitch}
                     onChange={handleConciseStorageChange}
                   />
-                  <H4 marginBottom="none" marginLeft="medium">Use Concise Metafield Storage</H4>
                 </Flex>
               </Flex>
               <Button
