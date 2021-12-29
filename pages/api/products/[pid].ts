@@ -68,6 +68,9 @@ export default async function products(
           const { data: existingMetafields = [] } = await bigcommerce.get(`/catalog/products/${pid}/metafields`);
 
           if(useConciseMetafieldStorage) {
+            // console.log('metafields: ', existingMetafields)
+            // console.log('accesstoken: ', accessToken)
+
             let metafieldResults = [];
             const existingMetafieldId = getMetafieldId(existingMetafields);
 
@@ -184,10 +187,12 @@ export default async function products(
 
         res.status(200).json(result);
       } catch (error) {
-        const { message, response } = error;
+        const { message, response, responseBody, code } = error;
+        const errorMessage = JSON.parse(responseBody)?.title;
+        console.log(errorMessage)
         res
-          .status(response?.status || 500)
-          .end(message || "Authentication failed, please re-install");
+          .status(response?.status || code || 500)
+          .end(message || errorMessage || "Authentication failed, please re-install");
       }
       break;
     default:
