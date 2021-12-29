@@ -178,6 +178,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
     if(response.ok) {
       setShowNewLocaleForm(false);
       alertsManager.add({
+        autoDismiss: true,
         messages: [
           {
             text: 'Language Added Successfully!',
@@ -188,6 +189,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
       mutateStore('/api/db/locales');
     } else {
       alertsManager.add({
+        autoDismiss: true,
         messages: [
           {
             text: 'Sorry there was a problem adding the langauge',
