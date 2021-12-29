@@ -29,7 +29,7 @@ export default async function products(
         myHeaders.append("Content-Type", "application/json");
         myHeaders.append("X-Auth-Token", `${accessToken}`);
         myHeaders.append("Accept-Encoding", "application/gzip");
-        
+
         const graphql = JSON.stringify({
           query: `query {
                     store {
@@ -45,7 +45,8 @@ export default async function products(
               }
           }`,
           variables: {}
-        })
+        });
+
         const requestOptions = {
           method: 'POST',
           headers: myHeaders,
@@ -54,7 +55,6 @@ export default async function products(
         };
         
         const response = await fetch(`https://api.bigcommerce.com/stores/${storeHash}/graphql`, requestOptions);
-
         if (!response.ok) throw new Error('[pid.tsx ERROR]: Cannot fetch from requested API product resource');
 
         const json = await response.json();
@@ -65,8 +65,6 @@ export default async function products(
         };
 
         res.status(200).json(product);
-        console.log('[PRODUCT + METADATA]:', product);
-        
       } catch (error) {
         const { message, response } = error;
         res
