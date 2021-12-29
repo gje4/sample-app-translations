@@ -4,7 +4,7 @@ import { ArrowBackIcon, ArrowUpwardIcon, AddIcon } from "@bigcommerce/big-design
 import { ChangeEvent, FormEvent, useState, useEffect } from "react";
 import { FormData, StringKeyValue } from "@types";
 import { useConciseMetafieldStorage, availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
-import { useStoreLocale, useDbStoreData, useDbLocales } from "@lib/hooks";
+import { useStoreLocale, useDbStoreData } from "@lib/hooks";
 import { alertsManager } from "@pages/_app";
 import { useSession } from '../context/session';
 import styled from 'styled-components';
@@ -30,7 +30,6 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
   const router = useRouter();
   const { context } = useSession();
   const { locale: storeLocale } = useStoreLocale();
-  // const { isLoading: isDbLocalesLoading, dbLocales } = useDbLocales();
   const { isLoading: isStoreDataLoading, store: storeData, mutateStore } = useDbStoreData();
   const { useConciseMetafieldStorage: useConciseStorage = useConciseMetafieldStorage, locales: dbLocales = availableLocales } = storeData || {};
   const [ conciseStorageSwitch, setConciseStorageSwitch ] = useState(useConciseStorage);

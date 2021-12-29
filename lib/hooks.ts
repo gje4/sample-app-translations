@@ -86,16 +86,3 @@ export function useStoreLocale() {
     isError: error
   }
 }
-
-export function useDbLocales() {
-  const { context } = useSession();
-  const params = new URLSearchParams({ context }).toString();
-
-  const { data, error } = useSWR(context ? [`/api/db/locales`, params] : null, fetcher);
-
-  return {
-    dbLocales: data,
-    isLoading: !data && !error,
-    isError: error
-  }
-}
