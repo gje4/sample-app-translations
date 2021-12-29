@@ -33,14 +33,8 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
   const { isLoading: isStoreDataLoading, store: storeData, mutateStore } = useDbStoreData();
   const { useConciseMetafieldStorage: useConciseStorage = useConciseMetafieldStorage, locales: dbLocales = availableLocales } = storeData || {};
   const [ conciseStorageSwitch, setConciseStorageSwitch ] = useState(useConciseStorage);
-  console.log('store data: ', storeData);
-  console.log('concise storage switch: ', conciseStorageSwitch);
-  
   const defaultStoreLocale = storeLocale || defaultLocale;
   const [currentLocale, setLocale] = useState<string>(defaultStoreLocale);
-  
-  console.log('productData: ', productData);
-  console.log('dbLocales: ', dbLocales);
   
   useEffect(() => {
     defaultStoreLocale && setLocale(defaultStoreLocale);
@@ -59,8 +53,6 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
       const filteredConciseFields = conciseMetafields.filter(
         (meta) => meta.namespace === locale && meta.key === fieldName && meta.value !== ''
       );
-
-      console.log('concise field value: ', filteredConciseFields);
 
       // Return value from concise metafields if present and fallback to regular metafields otherwise
       if(filteredConciseFields.length > 0) {
@@ -173,14 +165,9 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
     newLocaleForm[fieldName] = value;
 
     setNewLocaleForm(newLocaleForm);
-
-    console.log('fieldname: ', fieldName);
-    console.log('new locale errors: ', newLocaleError);
   };
   const handleNewLocaleSubmit = async (event: FormEvent<EventTarget>) => {
     event.preventDefault();
-
-    console.log('new locale form data: ', newLocaleForm);
 
     const options = {
       method: 'PUT',

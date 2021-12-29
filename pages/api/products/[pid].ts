@@ -74,12 +74,8 @@ export default async function products(
             const conciseMetafields = getConciseMetafields(existingMetafields);
             let updatedMetafields = conciseMetafields;
 
-            console.log('concise metafields: ', conciseMetafields);
-
             for (const productField of translatableProductFields) {
               const metafieldValue = body[productField.key];
-
-              console.log('metafield value: ', metafieldValue);
 
               const existingConciseMetafield = conciseMetafields?.find(
                 (meta) => meta.key === productField.key && meta.namespace === selectedLocale
@@ -111,8 +107,6 @@ export default async function products(
               }
             }
 
-            console.log('updated metafields: ', updatedMetafields);
-
             // Check if parent concise metafield exists
             if (existingMetafieldId) {
               // Update the metafield
@@ -137,8 +131,6 @@ export default async function products(
               metafieldResults.push(data);
             }
             
-            console.log('product api results: ', metafieldResults);
-
           } else {
             for (const productField of translatableProductFields) {
               let metafieldResults = [];
@@ -177,8 +169,7 @@ export default async function products(
                   metafieldResults.push(data);
                 }
               }
-  
-              console.log('product api results: ', metafieldResults);
+
               const result = metafieldResults;
             }
           }
@@ -194,9 +185,6 @@ export default async function products(
         res.status(200).json(result);
       } catch (error) {
         const { message, response } = error;
-
-        console.log(error);
-
         res
           .status(response?.status || 500)
           .end(message || "Authentication failed, please re-install");

@@ -24,7 +24,6 @@ const ProductInfo = () => {
     try {
       data.locale = selectedLocale;
       data.useConciseMetafieldStorage = useConciseStorage;
-      console.log('form data: ', data);
 
       // Update product details
       setProductSaving(true);
