@@ -152,7 +152,8 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDe
   ) => {
     const { target } = event;
     const { name: fieldName, value } = target;
-    const regex = RegExp(target.pattern, 'g');
+    const { pattern } = event.target as HTMLInputElement;
+    const regex = RegExp(pattern, 'g');
 
     regex.test(target.value) 
       ? setNewLocaleError((prev) => ({...prev, [fieldName]: ''})) 
