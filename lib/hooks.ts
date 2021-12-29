@@ -53,30 +53,35 @@ export function useProductInfo(pid: number, list: ListItem[]) {
     const params = new URLSearchParams({ context }).toString();
     const product = list.find(item => item.id === pid);
     // Conditionally fetch product if it doesn't exist in the list (e.g. deep linking)
-    const { data, error } = useSWR(!product && context ? [`/api/products/${pid}`, params] : null, fetcher);
+    const { data, error, mutate: mutateInfo } = useSWR(!product && context ? [`/api/products/${pid}`, params] : null, fetcher);
 
     return {
         product: product ?? data,
         isLoading: product ? false : (!data && !error),
         error,
+        mutateInfo,
     };
 }
 
-export function useStoreLocale() {
-  const { data, error } = useSWR(`/api/locale`, fetcher)
+export function useDbStoreData() {
+  const { data, error, mutate: mutateStore } = useSWR(`/api/db/store`, fetcher);
 
   return {
-    locale: data?.data?.default_shopper_language,
+    store: data,
     isLoading: !data && !error,
-    isError: error
+    isError: error,
+    mutateStore,
   }
 }
 
-export function useDbLocales() {
-  const { data, error } = useSWR(`/api/db/locales`, fetcher)
+export function useStoreLocale() {
+  const { context } = useSession();
+  const params = new URLSearchParams({ context }).toString();
+
+  const { data, error } = useSWR(context ? [`/api/locale`, params] : null, fetcher);
 
   return {
-    dbLocales: data,
+    locale: data?.data?.default_shopper_language,
     isLoading: !data && !error,
     isError: error
   }

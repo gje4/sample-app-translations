@@ -1,7 +1,7 @@
 import firebase from "firebase/app";
 import "firebase/firestore";
 import { SessionProps, StoreData, UserData } from "../../types";
-import { availableLocales } from "@lib/constants";
+import { useConciseMetafieldStorage, availableLocales } from "@lib/constants";
 
 // Firebase config and initialization
 // Prod applications might use config file
@@ -51,7 +51,7 @@ export async function setStore(session: SessionProps) {
   const locales = availableLocales.map(locale => ({ code: locale.code, label: locale.label }));
   const storeHash = context?.split("/")[1] || "";
   const ref = db.collection("store").doc(storeHash);
-  const data = { accessToken, adminId: id, locales, scope };
+  const data = { accessToken, adminId: id, locales, scope, useConciseMetafieldStorage };
 
   await ref.set(data);
 }
@@ -149,3 +149,11 @@ export async function deleteStore({ store_hash: storeHash }: SessionProps) {
   await ref.delete();
 }
 
+export async function updateConciseStorage(storeHash: string, useConciseStorage: boolean) {
+  if (!storeHash) return null;
+  const ref = db.collection("store").doc(storeHash);
+
+  return ref.update({
+    useConciseMetafieldStorage: useConciseStorage
+  });
+}

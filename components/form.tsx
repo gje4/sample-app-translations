@@ -1,11 +1,12 @@
-import { Button, Box, Flex, FlexItem, H1, HR, Input, Panel, Popover, Select, Form as StyledForm, Textarea, Text } from "@bigcommerce/big-design";
+import { Button, Box, Flex, FlexItem, H1, H4, HR, Input, Panel, Popover, Select, Form as StyledForm, Switch, Textarea, Text } from "@bigcommerce/big-design";
 import { useRouter } from "next/router";
 import { ArrowBackIcon, ArrowUpwardIcon, AddIcon } from "@bigcommerce/big-design-icons";
 import { ChangeEvent, FormEvent, useState, useEffect } from "react";
 import { FormData, StringKeyValue } from "@types";
-import { availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
-import { useStoreLocale, useDbLocales } from "@lib/hooks";
+import { useConciseMetafieldStorage, availableLocales, defaultLocale, translatableProductFields } from "@lib/constants";
+import { useStoreLocale, useDbStoreData } from "@lib/hooks";
 import { alertsManager } from "@pages/_app";
+import { useSession } from '../context/session';
 import styled from 'styled-components';
 
 const StyledFlex = styled(Box)`
@@ -18,31 +19,57 @@ const StyledFlex = styled(Box)`
 interface FormProps {
   formData: FormData;
   onCancel(): void;
-  onSubmit(form: FormData, selectedLocale: string): void;
+  onSubmit(form: FormData, selectedLocale: string, useConciseStorage: boolean): void;
   isSaving: boolean;
+  onDelete(): void;
 } 
 
 const FormErrors = {};
 
-function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: FormProps) {
+function ProductForm({ formData: productData, onCancel, onSubmit, isSaving, onDelete }: FormProps) {
   const router = useRouter();
+  const { context } = useSession();
   const { locale: storeLocale } = useStoreLocale();
-  const { isLoading: isDbLocalesLoading, dbLocales } = useDbLocales();
+  const { isLoading: isStoreDataLoading, store: storeData, mutateStore } = useDbStoreData();
+  const { useConciseMetafieldStorage: useConciseStorage = useConciseMetafieldStorage, locales: dbLocales = availableLocales } = storeData || {};
+  const [ conciseStorageSwitch, setConciseStorageSwitch ] = useState(useConciseStorage);
   const defaultStoreLocale = storeLocale || defaultLocale;
   const [currentLocale, setLocale] = useState<string>(defaultStoreLocale);
-
-  console.log('productData: ', productData);
-  console.log('dbLocales: ', dbLocales);
-
+  
   useEffect(() => {
     defaultStoreLocale && setLocale(defaultStoreLocale);
-  }, [defaultStoreLocale, setLocale]);
+    
+    if(isStoreDataLoading === false) setConciseStorageSwitch(useConciseStorage);
+  }, [defaultStoreLocale, setLocale, isStoreDataLoading, useConciseStorage]);
 
   const getMetafieldValue = (fieldName: string, locale: string) => {
-    const filteredFields = productData.metafields.filter(
-      (meta) => meta.namespace === locale && meta.key === fieldName
-    );
-    return filteredFields[0]?.value;
+    if (productData?.metafields === undefined) return null;
+
+    if(conciseStorageSwitch === true) {
+      let conciseMetafields = productData.metafields.filter(
+        (meta) => meta.key === 'multilingual_metafields'
+      );
+      if(conciseMetafields.length > 0) conciseMetafields = JSON.parse(conciseMetafields[0].value);
+      const filteredConciseFields = conciseMetafields.filter(
+        (meta) => meta.namespace === locale && meta.key === fieldName && meta.value !== ''
+      );
+
+      // Return value from concise metafields if present and fallback to regular metafields otherwise
+      if(filteredConciseFields.length > 0) {
+        return filteredConciseFields[0]?.value;
+      } else {
+        const filteredFields = productData.metafields.filter(
+          (meta) => meta.namespace === locale && meta.key === fieldName
+        );
+
+        return filteredFields[0]?.value;
+      }
+    } else {
+      const filteredFields = productData.metafields.filter(
+        (meta) => meta.namespace === locale && meta.key === fieldName
+      );
+      return filteredFields[0]?.value;
+    }
   };
 
   const getFormObjectForLocale = (locale: string) => {
@@ -106,7 +133,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
     const hasErrors = Object.keys(errors).length > 0;
     if (hasErrors) return;
 
-    onSubmit(form, currentLocale);
+    onSubmit(form, currentLocale, conciseStorageSwitch);
   };
 
   // New Locale Form styles, state & handlers
@@ -119,6 +146,7 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
     code: 'Please enter lowercase, two character code',
   };
   const [ newLocaleError, setNewLocaleError ] = useState({});
+
   const handleNewLocaleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -137,25 +165,20 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
     newLocaleForm[fieldName] = value;
 
     setNewLocaleForm(newLocaleForm);
-
-    console.log('fieldname: ', fieldName);
-    console.log('new locale errors: ', newLocaleError);
   };
   const handleNewLocaleSubmit = async (event: FormEvent<EventTarget>) => {
     event.preventDefault();
 
-    console.log('new locale form data: ', newLocaleForm);
-
     const options = {
       method: 'PUT',
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newLocaleForm),
     }
-    const response = await fetch('/api/db/locales', options);
+    const response = await fetch(`/api/db/locales?context=${context}`, options);
 
     if(response.ok) {
       setShowNewLocaleForm(false);
       alertsManager.add({
+        autoDismiss: true,
         messages: [
           {
             text: 'Language Added Successfully!',
@@ -163,8 +186,10 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
         ],
         type: 'success',
       });
+      mutateStore('/api/db/locales');
     } else {
       alertsManager.add({
+        autoDismiss: true,
         messages: [
           {
             text: 'Sorry there was a problem adding the langauge',
@@ -173,6 +198,50 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
         type: 'error',
       });
     }
+  };
+
+  // Concise Storage Switch
+  const handleConciseStorageChange = async () => {
+    setConciseStorageSwitch(prev => !prev);
+
+    try {
+      const options = {
+        method: 'PUT',
+        body: JSON.stringify({
+          useConciseMetafieldStorage: !conciseStorageSwitch
+        })
+      }
+      const response = await fetch(`/api/db/conciseStorage?context=${context}`, options);
+      const { message } = await response.json();
+
+      if(!response.ok || message !== 'success') {
+        throw new Error('Sorry, there was a problem updating the Concise Metafield Storage setting...');
+      }
+
+      alertsManager.add({
+        messages: [
+          {
+            text: 'Concise Metafield Storage setting updated successfully!',
+          },
+        ],
+        type: 'success',
+      });
+    } catch(error) {
+      alertsManager.add({
+        messages: [
+          {
+            text: 'Sorry, there was a problem updating the Concise Metafield Storage setting...',
+          },
+        ],
+        type: 'error',
+      });
+      setConciseStorageSwitch(prev => !prev);
+    }
+  };
+
+  // For Testing
+  const onDeleteMetafields = () => {
+    onDelete(productData.metafields);
   };
 
   return (
@@ -198,38 +267,23 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
           </FlexItem>
           <FlexItem flexGrow={0}>
             <Box paddingBottom="small">
-              {!dbLocales && (
-                <Select
-                  name="lang"
-                  options={availableLocales.map((locale) => ({
-                    value: locale.code,
-                    content: `${locale.label} ${locale.code === defaultStoreLocale ? '(Default)': ''}`,
-                  }))}
-                  placeholder="Select Language"
-                  required
-                  value={currentLocale}
-                  onOptionChange={handleLocaleChange}
-                />
-              )}
-              {dbLocales && (
-                  <Select
-                    name="lang"
-                    options={dbLocales.map((locale) => ({
-                      value: locale.code,
-                      content: `${locale.label} ${locale.code === defaultStoreLocale ? '(Default)': ''}`,
-                    }))}
-                    placeholder="Select Language"
-                    required
-                    value={currentLocale}
-                    onOptionChange={handleLocaleChange}
-                    action={{
-                      actionType: 'normal' as const,
-                      content: 'Add Language',
-                      icon: <AddIcon />,
-                      onActionClick: () => setShowNewLocaleForm(true),
-                    }}
-                  />
-              )}
+              <Select
+                name="lang"
+                options={dbLocales.map((locale) => ({
+                  value: locale.code,
+                  content: `${locale.label} ${locale.code === defaultStoreLocale ? '(Default)': ''}`,
+                }))}
+                placeholder="Select Language"
+                required
+                value={currentLocale}
+                onOptionChange={handleLocaleChange}
+                action={{
+                  actionType: 'normal' as const,
+                  content: 'Add Language',
+                  icon: <AddIcon />,
+                  onActionClick: () => setShowNewLocaleForm(true),
+                }}
+              />
             </Box>
           </FlexItem>
         </Flex>
@@ -384,6 +438,23 @@ function ProductForm({ formData: productData, onCancel, onSubmit, isSaving }: Fo
           {/* Actions Fixed Footer */}
           <StyledFlex backgroundColor="white" border="box" padding="medium">
             <Flex justifyContent="flex-end">
+              <Flex alignItems="center" style={{marginRight: 'auto'}}>
+                <FlexItem marginRight="xLarge">
+                  <Button
+                    type="button"
+                    onClick={onDeleteMetafields}
+                  >
+                    Delete Product Metafields
+                  </Button>
+                </FlexItem>
+                <Flex alignItems="center">
+                  <H4 marginBottom="none" marginRight="medium">Use Concise Metafield Storage</H4>
+                  <Switch
+                    checked={conciseStorageSwitch}
+                    onChange={handleConciseStorageChange}
+                  />
+                </Flex>
+              </Flex>
               <Button
                 marginRight="medium"
                 type="button"

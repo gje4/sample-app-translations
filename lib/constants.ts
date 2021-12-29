@@ -1,3 +1,5 @@
+export const useConciseMetafieldStorage:boolean = true;
+
 export const defaultLocale:string = 'en';
 
 export const availableLocales:Array<{code:string, label: string}> = [
